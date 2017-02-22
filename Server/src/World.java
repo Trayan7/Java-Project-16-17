@@ -19,15 +19,18 @@ public class World {
 	public World(String worldName) {
 		if(worldName.length() == 0){
 			Map = randomMap(RANDOM_SIZE,RANDOM_SIZE);
+			return this;
 		}else{
 			try {
 				Map = loadFromFile(worldName);
+				return this;
 			} catch (NumberFormatException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
+		return null;
 	}
 
 	/**
