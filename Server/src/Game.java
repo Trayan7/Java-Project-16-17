@@ -16,7 +16,8 @@ public class Game implements Runnable {
 	/**
 	 * The world the game is taking place in
 	 */
-	private World world;
+	String path = ""; //placeholder for IO.
+	private World world = new World(path);
 	
 	/**
 	 * List of players in the game roaming the world and not in battle
