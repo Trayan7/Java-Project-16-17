@@ -16,21 +16,18 @@ public class World {
 	 * 
 	 * @worldName The path of the map you want to load. Leave empty for a random map.
 	 */
-	public World genWorld(String worldName) {
+	public World(String worldName) {
 		if(worldName.length() == 0){
 			Map = randomMap(RANDOM_SIZE,RANDOM_SIZE);
-			return this;
 		}else{
 			try {
 				Map = loadFromFile(worldName);
-				return this;
 			} catch (NumberFormatException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		return null;
 	}
 
 	/**
@@ -95,7 +92,7 @@ public class World {
 	 * @param n the column of the tile
 	 * @return the biome as byte
 	 */
-	public String getBiomeName(int m, int n) {
+	public Byte getBiome(int m, int n) {
 		return Map[m][n];
 	}
 	
