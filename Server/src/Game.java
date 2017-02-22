@@ -41,7 +41,8 @@ public class Game implements Runnable {
 	 * Game constructor
 	 * @param worldName The name of the world to be loaded, empty if new generated
 	 */
-	//Already did this in World and I don't think we need a Game constructor.
+	//Already did this in World and I don't think we need a Game constructor
+	//unless we want the main() to start the game.
 	public Game(String worldName) {
 		this.world = new World(worldName);
 		
@@ -52,9 +53,6 @@ public class Game implements Runnable {
 	 * @param name
 	 */
 	public void join(String name) {
-		//establish TCP connection
-		//give each player object a BufferedReader
-		//ask for username
 		//Check if name is already used
 		for (String playerName : players.keySet()) {
 			if (name == playerName) {
@@ -96,7 +94,7 @@ public class Game implements Runnable {
 	 */
 	public void start() {
 		//Seriously, why can't we just put this in run()?
-		//Start is already used to start threads. Maybe choose a different name and/or put it in run().
+		//Start is already used by java to start parallel threads. Maybe choose a different name and/or put it in run().
 		while (players.size() < 1 || players.size() != readyPlayers.size()) {
 			//Wait...
 		}
@@ -136,7 +134,7 @@ public class Game implements Runnable {
 			 * Iterate over all spots on the world
 			 * Check if any players are on the same spot
 			 */
-			//why not iterate over all players and check if their coordinates match?
+			//why not iterate over all roaming players and check if their coordinates match?
 			ArrayList<String> playersOnSpot = new ArrayList<String>();
 			if (playersOnSpot.size() > 1) {
 				initiateBattle(playersOnSpot);
