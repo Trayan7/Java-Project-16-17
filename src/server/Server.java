@@ -1,9 +1,10 @@
+package server;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
 
-public class Game implements Runnable {
+public class Server implements Runnable {
 	Random rgen = new Random();
 	//TODO: Add a server log
 	/**
@@ -43,7 +44,7 @@ public class Game implements Runnable {
 	 */
 	//Already did this in World and I don't think we need a Game constructor
 	//unless we want the main() to start the game.
-	public Game(String worldName) {
+	public Server(String worldName) {
 		this.world = new World(worldName);
 		
 	}

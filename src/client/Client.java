@@ -1,8 +1,9 @@
+package client;
 
-public class Game {
+public class Client {
 	int health = 100;
 	
-	public Game() {
+	public Client() {
 		ConsoleControl control = new ConsoleControl();
 		
 		String host = control.getHost();
