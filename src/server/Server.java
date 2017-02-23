@@ -66,7 +66,11 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @param name
 	 */
 	public UUID join(String name, ClientInterface client) throws RemoteException {
-		//Check if name is already used
+//		if(isFull()){
+//			send("The server is full.");
+//		} else {
+//			rest of join
+//		}
 		System.out.print("Player " + name + " tries to join - ");
 		
 		UUID id = UUID.randomUUID();
@@ -77,6 +81,15 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		    	return null;
 		    }
 		}
+		
+//		int[] pos = randomPlayerPos();
+//		Player player = new Player(name, pos[0], pos[1]);
+		
+//		try {
+//			sendAll(name + " has joined.");
+//		} catch (RemoteException e) {
+//			e.printStackTrace();
+//		}
 		
 		//TODO Return some kind of error to the client if world already contains a player on each spot
 		
@@ -242,3 +255,87 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		System.out.println(playerActions.size() + "/" + roamingPlayers.size() + " have chosen");
 	}
 }
+
+
+//public void sendAll(String msg) throws RemoteException {
+//	synchronized (players) {
+//		for (Entry<String, Player> p : players.entrySet()) {
+//			try {
+//				p.getValue().getControlInterface().send(msg);
+//			} catch (RemoteException _) {
+//				System.out.println(p.getKey() + " failed to receive :\"" + msg + "\"");
+//			}
+//		}
+//	}
+//}
+
+///**
+// * Checks if all tiles are taken.
+// * @return 
+// */
+//public boolean isFull(){
+//	Boolean[][] isUsed = new Boolean[world.zeilen][world.spalten];
+//	for(int i = 0; i < world.zeilen; i++) {
+//		for(int j = 0; j < world.spalten; j++){
+//			isUsed[i][j] = false;
+//		}
+//	}
+//	for (Entry<String, Player> p : players.entrySet()) {
+//		isUsed[p.getValue().getY()][p.getValue().getY()] = true;
+//	}
+//	for(int i = 0; i < world.zeilen; i++) {
+//		for(int j = 0; j < world.spalten; j++){
+//			if(isUsed[i][j] == false) {
+//				return false;
+//			}
+//		}
+//	}
+//	return true;
+//}
+
+///**
+// * Randomly selects a position. If there is already a Player on that tile,
+// * selects a new random position up to MAX_RANDOM_POSITION_TRIES.
+// * Then goes through all possible position and selects the first free one.
+// * 
+// * @return int[0] = zeilen/y, int[1] = spalten/x, null if failed.
+// */
+//public int[] randomPlayerPos() {
+//	Boolean[][] isUsed = new Boolean[world.zeilen][world.spalten];
+//	for(int i = 0; i < world.zeilen; i++) {
+//		for(int j = 0; j < world.spalten; j++){
+//			isUsed[i][j] = false;
+//		}
+//	}
+//	for (Entry<String, Player> p : players.entrySet()) {
+//		isUsed[p.getValue().getY()][p.getValue().getY()] = true;
+//	}
+//	for(int i = 0; i < MAX_RANDOM_POSITION_TRIES; i++){
+//		int y = rgen.nextInt(world.zeilen);
+//		int x = rgen.nextInt(world.spalten);
+//		if(isUsed[y][x] == false) {
+//			int[] position = {y, x};
+//			return  position;
+//		}
+//	}
+//	for(int i = 0; i < world.zeilen; i++) {
+//		for(int j = 0; j < world.spalten; j++){
+//			if(isUsed[i][j] == false){
+//				int[] position = {i, j};
+//				return position;
+//			}
+//		}
+//	}
+//	return null;
+//}
+//
+//public ArrayList<ArrayList<Player>> allBattles(){
+//	Player[][] playerMap = new Player[world.zeilen][world.spalten];
+//	ArrayList<ArrayList<Player>> battles;
+//	for (Entry<String, Player> p : players.entrySet()) {
+//		if(playerMap[p.getValue().getY()][p.getValue().getX()] != null){
+//			
+//		}
+//	}
+//}
+//}
