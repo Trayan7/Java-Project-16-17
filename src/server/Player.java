@@ -1,5 +1,6 @@
 package server;
 
+
 public class Player {
 	/*
 	 * Current health of player

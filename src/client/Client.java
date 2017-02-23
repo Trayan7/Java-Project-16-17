@@ -1,9 +1,29 @@
 package client;
 
+
+import java.rmi.Naming;
+
+import server.ServerInterface;
+
 public class Client {
 	int health = 100;
 	
 	public Client() {
+		String uri = "rmi://localhost:1099/ServerInterface";
+		try {
+			ServerInterface s = (ServerInterface) Naming.lookup(uri);
+			s.send("Test");
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		
+		System.exit(0);
+		
+		
+		
 		ConsoleControl control = new ConsoleControl();
 		
 		String host = control.getHost();

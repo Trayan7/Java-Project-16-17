@@ -1,10 +1,22 @@
 package server;
+
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
+import client.ControlInterface;
 
-public class Server implements Runnable {
+
+public class Server extends UnicastRemoteObject implements ServerInterface {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	
 	Random rgen = new Random();
 	//TODO: Add a server log
 	/**
@@ -39,14 +51,11 @@ public class Server implements Runnable {
 	private ArrayList<Thread> battles;
 	
 	/**
-	 * Game constructor
+	 * Server constructor
 	 * @param worldName The name of the world to be loaded, empty if new generated
 	 */
-	//Already did this in World and I don't think we need a Game constructor
-	//unless we want the main() to start the game.
-	public Server(String worldName) {
+	public Server(String worldName) throws RemoteException {
 		this.world = new World(worldName);
-		
 	}
 	
 	/**
@@ -150,7 +159,6 @@ public class Server implements Runnable {
 	 * Starts battle between two players
 	 * @param players List of players that are starting a battle
 	 */
-	//I belive we need a battle between up to five players.
 	public void initiateBattle(ArrayList<String> players) {
 		//These players aren't roaming anymore
 		for (String player : players) {
@@ -163,7 +171,6 @@ public class Server implements Runnable {
 		 * Add battle to list of battles
 		 * battle.start(); to start the thread
 		 */
-		// How about making an ArrayList<Player> and handing that over to Battle.
 	}
 	
 	/**
@@ -178,5 +185,25 @@ public class Server implements Runnable {
 		 * Return survivors to roamingPlayers
 		 */
 		//Check all battles for killed players -> Battles will terminate themselves, so we just need to wait for them.
+	}
+
+	public boolean register(ControlInterface u, String name)
+			throws RemoteException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public List<String> getUsers() throws RemoteException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void logout(ControlInterface u) throws RemoteException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void send(String msg) throws RemoteException {
+		System.out.println("Message from client: " + msg);
 	}
 }
