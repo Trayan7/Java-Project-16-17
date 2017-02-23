@@ -82,8 +82,18 @@ public class World {
 	 * @param n the column of the tile
 	 * @return the biome name as a string
 	 */
-	public String getBiome(int m, int n) {
+	public String getBiomeName(int m, int n) {
 		return biomeNames(Map[m][n]);
+	}
+	
+	/**
+	 * Gives you the code of the biome for any tile on the map.
+	 * @param m the row of the tile
+	 * @param n the column of the tile
+	 * @return the biome as byte
+	 */
+	public Byte getBiome(int m, int n) {
+		return Map[m][n];
 	}
 	
 	/**
