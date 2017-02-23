@@ -1,5 +1,7 @@
 package server;
 
+import client.ClientInterface;
+
 
 public class Player {
 	/*
@@ -17,6 +19,16 @@ public class Player {
 	 */
 	private int y;
 	
+	/**
+	 * The name of the player
+	 */
+	private String name;
+	
+	/**
+	 * The client object of this player
+	 */
+	private ClientInterface client;
+	
 	//TODO Some kind of reference to the client
 	
 	/**
@@ -24,7 +36,8 @@ public class Player {
 	 * @param x Start x coordinate of player
 	 * @param y Start y coordinate of player 
 	 */
-	public Player(int x, int y) {
+	public Player(String name, int x, int y) {
+		this.name = name;
 		this.x = x;
 		this.y = y;
 	}
@@ -45,6 +58,22 @@ public class Player {
 		this.y = y;
 	}
 	
+	public int getX() {
+		return x;
+	}
+	
+	public int getY() {
+		return y;
+	}
+	
+	public int getHealth() {
+		return this.health;
+	}
+	
+	public void setHealth(int health) {
+		this.health = health;
+	}
+	
 	/**
 	 * Function to let the player take a hit and lose some life
 	 * @param lifeloss The amount of life lost
@@ -62,5 +91,29 @@ public class Player {
 	 */
 	public void setClient() {
 		//TODO Some setter function to set the client reference
+	}
+	
+	/**
+	 * Sets the client of this player
+	 * @param client The client of this player
+	 */
+	public void setClient(ClientInterface client) {
+		this.client = client;
+	}
+	
+	/**
+	 * Returns the client of this player
+	 * @return The client of this player
+	 */
+	public ClientInterface getClient() {
+		return client;
+	}
+	
+	/**
+	 * Returns the name of the player
+	 * @return The name of the player
+	 */
+	public String getName() {
+		return name;
 	}
 }

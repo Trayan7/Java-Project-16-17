@@ -1,5 +1,7 @@
 package client;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 
 
@@ -48,11 +50,32 @@ public class ConsoleControl implements ControlInterface {
 		}
 	}
 	
+	public String getMoveDirection() {
+		String dir = "";
+		System.out.println("whatthefuck");
+	    
+		if (Arrays.asList("North", "East", "South", "West", "Stay").contains(dir)) {
+			System.out.println();
+			System.out.println("Please choose one of the following moves:");
+			System.out.println("North");
+			System.out.println("East");
+			System.out.println("South");
+			System.out.println("West");
+			System.out.println("Stay");
+			System.out.println();
+			System.out.println();
+			dir = scanner.next();
+			scanner.nextLine();
+		}
+		return dir;
+	}
+	
 	/**
 	 * Wait until user presses enter
 	 */
 	void waitUntilReady() {
 		System.out.print("Press ENTER once you're ready to play.");
 		scanner.nextLine();
+		System.out.println("READY");
 	}
 }

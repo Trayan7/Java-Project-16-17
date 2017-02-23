@@ -1,12 +1,16 @@
 package server;
 
 import java.rmi.RemoteException;
+import java.rmi.server.RemoteServer;
+import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
+import client.ClientInterface;
 import client.ControlInterface;
 
 
@@ -22,28 +26,27 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	/**
 	 * List of players in the current game
 	 */
-	private HashMap<String, Player> players = new HashMap<String, Player>();
+	private HashMap<UUID, Player> players = new HashMap<UUID, Player>();
 	
 	/**
-	 * 
+	 * List of players that are ready to play
 	 */
-	private ArrayList<String> readyPlayers;
+	private ArrayList<UUID> readyPlayers = new ArrayList<UUID>();
 	
 	/**
 	 * The world the game is taking place in
 	 */
-	String path = ""; //placeholder for IO.
-	private World world = new World(path);
+	private World world;
 	
 	/**
 	 * List of players in the game roaming the world and not in battle
 	 */
-	private ArrayList<String> roamingPlayers;
+	private ArrayList<UUID> roamingPlayers = new ArrayList<UUID>();
 	
 	/**
 	 * 
 	 */
-	private HashMap<String, String> playerActions;
+	private HashMap<UUID, String> playerActions;
 	
 	/**
 	 * List of the battles taking place
@@ -62,12 +65,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * Function allowing a client to join the game
 	 * @param name
 	 */
-	public void join(String name) {
+	public UUID join(String name, ClientInterface client) throws RemoteException {
 		//Check if name is already used
-		for (String playerName : players.keySet()) {
-			if (name == playerName) {
-		    	//TODO Tell client "nah, username already used"
-				return;
+		System.out.print("Player " + name + " tries to join - ");
+		
+		UUID id = UUID.randomUUID();
+		
+		for (Player player: players.values()) {
+			if (name.equals(player.getName())) {
+				System.out.println("without success");
+		    	return null;
 		    }
 		}
 		
@@ -79,35 +86,49 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		 * Randomly choose one
 		 * Create new player with chosed coordinates (replace 0, 0 below)
 		 */
-		Player player = new Player(0, 0);
+		Player player = new Player(name, 0, 0);
+		player.setClient(client);
 		
 		//TODO set client reference via player.setClient()
 		
-		players.put(name, player);
+		players.put(id, player);
+		roamingPlayers.add (id);
 		//TODO Return some "yay you joined" message
 		//Tell everyone _name_ joined
+		System.out.println("successfully");
+		
+		return id;
 	}
 	
 	/**
 	 * Function allowing the client to say "I'm ready to start the game"
 	 */
-	public void getReady() {
-		//TODO Get name of player out of already joined players
-		String name = "";
-		if (!readyPlayers.contains(name)) {
-			readyPlayers.add(name);
+	public void getReady(UUID id) throws RemoteException {
+		System.out.println(players.get(id).getName() + " added as ready");
+		if (players.containsKey(id) && !readyPlayers.contains(id)) {
+			readyPlayers.add(id);
 		}
+		System.out.println(readyPlayers.size() + "/" + players.size() + " ready");
 	}
 	
 	/**
 	 * Function waits until at least one player joined and every player is ready, the starts the game
 	 */
 	public void start() {
+		System.out.println("Started server");
 		//Seriously, why can't we just put this in run()?
 		//Start is already used by java to start parallel threads. Maybe choose a different name and/or put it in run().
 		while (players.size() < 1 || players.size() != readyPlayers.size()) {
 			//Wait...
+			System.out.print(".");
+			try {
+				Thread.sleep(300);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+		updatePlayers();
 		run();
 	}
 	
@@ -115,15 +136,23 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * Game main loop
 	 */
 	public void run() {
+		System.out.println("Started game");
 		//While there's more than one player left
 		while (players.size() > 1) {
 			//Reset old action list
-			playerActions = new HashMap<String, String>();
+			playerActions = new HashMap<UUID, String>();
 			
-			for (String playerName : roamingPlayers) {
+			for (UUID playerName : roamingPlayers) {
 				Player player = players.get(playerName);
-				//TODO Notify player that he has to give us his new action now
+				try {
+					player.getClient().askForMove();
+				} catch (RemoteException e) {
+					// TODO Handle disconnects
+					e.printStackTrace();
+				}
+				//Notify player that he has to give us his new action now
 			}
+			
 			
 			//Wait until all players set their next action
 			while (roamingPlayers.size() > playerActions.size()) {
@@ -131,12 +160,27 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				//I think this also works with people suddenly getting out of battle
 			}
 			
-			for (String playerName : roamingPlayers) {
-				Player player = players.get(playerName);
-				String action = playerActions.get(playerName);
-				//TODO Update player object according to action
-				players.put(playerName, player);
-				//TODO Also, these lines should probably be synched, dunno
+			//Everyone set his move, so let's move it
+			for (UUID playerID: roamingPlayers) {
+				Player player = players.get(playerID);
+				String action = playerActions.get(playerID);
+				switch (action) {
+					case "north":
+						player.setY(player.getY() - 1);
+						break;
+					case "east":
+						player.setX(player.getX() + 1);
+						break;
+					case "south":
+						player.setY(player.getY() + 1);
+						break;
+					case "west":
+						player.setX(player.getX() - 1);
+						break;
+					default:
+						//Stay
+						break;
+				}
 			}
 			
 			/**
@@ -145,10 +189,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			 * Check if any players are on the same spot
 			 */
 			//why not iterate over all roaming players and check if their coordinates match?
-			ArrayList<String> playersOnSpot = new ArrayList<String>();
-			if (playersOnSpot.size() > 1) {
-				initiateBattle(playersOnSpot);
-			}
+			//Because you end up with n! checks for n players, while only n checks for n spots
+			updatePlayers();
 		}
 		
 		//TODO Notify last man standing of his win
@@ -173,10 +215,17 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		 */
 	}
 	
-	/**
-	 * Function called by a battle whenever a player got hit and updates are necessary
-	 */
-	public void updatePlayers() {
+	public void updatePlayers(){
+		for (UUID id : players.keySet()) {
+			Player player = players.get(id);
+			try {
+				player.getClient().updateData(player.getHealth(), player.getX(), player.getY());
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
 		/**
 		 * TODO
 		 * Notify all players of new player states (this also notifies killed players' clients about their deaths)
@@ -186,24 +235,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		 */
 		//Check all battles for killed players -> Battles will terminate themselves, so we just need to wait for them.
 	}
-
-	public boolean register(ControlInterface u, String name)
-			throws RemoteException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public List<String> getUsers() throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public void logout(ControlInterface u) throws RemoteException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void send(String msg) throws RemoteException {
-		System.out.println("Message from client: " + msg);
+	
+	public void makeMove(UUID id, String dir) throws RemoteException {
+		playerActions.put(id, dir);
+		System.out.println(players.get(id).getName() + " chose " + dir);
+		System.out.println(playerActions.size() + "/" + roamingPlayers.size() + " have chosen");
 	}
 }
