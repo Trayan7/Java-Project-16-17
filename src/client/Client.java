@@ -9,6 +9,11 @@ import java.util.UUID;
 import server.ServerInterface;
 
 public class Client extends UnicastRemoteObject implements ClientInterface {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	ServerInterface server;
 	
 	int health = 100;

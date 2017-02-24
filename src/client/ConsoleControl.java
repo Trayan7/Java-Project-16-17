@@ -1,6 +1,5 @@
 package client;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
 
@@ -52,9 +51,8 @@ public class ConsoleControl implements ControlInterface {
 	
 	public String getMoveDirection() {
 		String dir = "";
-		System.out.println("whatthefuck");
 	    
-		if (Arrays.asList("North", "East", "South", "West", "Stay").contains(dir)) {
+		while (!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West") && !dir.equals("Stay")) {
 			System.out.println();
 			System.out.println("Please choose one of the following moves:");
 			System.out.println("North");
@@ -67,6 +65,7 @@ public class ConsoleControl implements ControlInterface {
 			dir = scanner.next();
 			scanner.nextLine();
 		}
+		
 		return dir;
 	}
 	
