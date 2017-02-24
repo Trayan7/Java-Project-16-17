@@ -1,3 +1,4 @@
+package common;
 import java.rmi.Naming;
 
 import server.Server;
@@ -12,7 +13,7 @@ public class Main {
 		if (args[0].equals("server")) {
 			String uri = "rmi://localhost:1099/ServerInterface";
 			try {
-				Server server = new Server("");
+				Server server = new Server("random");
 				Naming.rebind(uri, server);
 				
 				server.start();
@@ -21,7 +22,8 @@ public class Main {
 			}
 		} else {
 			try {
-				Client client = new Client();				
+				@SuppressWarnings("unused")
+				Client client = new Client();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

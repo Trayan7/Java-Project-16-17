@@ -1,21 +1,20 @@
 package client;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
+
+import common.World;
 
 
 public class ConsoleControl implements ControlInterface {
-	Scanner scanner = new Scanner(System.in);
+	private Scanner scanner = new Scanner(System.in);
 	
-	public ConsoleControl() {
-		/**
-		 * TODO
-		 * Connect
-		 * While connected, ask for input
-		 * if roaming, ask for roaming stuff
-		 * else ask for battle stuff
-		 * end loop on disconnect or notification of server
-		 */
+	private World world;
+	
+	public ConsoleControl(World world) {
+		this.world = world;
 	}
 	
 	public String getUsername() {
@@ -49,9 +48,20 @@ public class ConsoleControl implements ControlInterface {
 		}
 	}
 	
-	public String getMoveDirection() {
+	public String getMoveDirection(int column, int row) {
+		HashMap<String, Byte> area = world.getArea(column, row);
+		List<String> directions = Arrays.asList("North","East","South","West");
+		System.out.println("You're standing on a " + world.biomeNames(area.get("Stay")));
+		for (String direction : directions) {
+			System.out.print(direction + " of you is: ");
+			if (!area.containsKey(direction)) {
+				System.out.println("absolutely nothing.");
+			} else {
+				System.out.println(world.biomeNames(area.get(direction)));
+			}
+		}
+		
 		String dir = "";
-	    
 		while (!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West") && !dir.equals("Stay")) {
 			System.out.println();
 			System.out.println("Please choose one of the following moves:");
@@ -61,9 +71,9 @@ public class ConsoleControl implements ControlInterface {
 			System.out.println("West");
 			System.out.println("Stay");
 			System.out.println();
-			System.out.println();
 			dir = scanner.next();
 			scanner.nextLine();
+			System.out.println();
 		}
 		
 		return dir;

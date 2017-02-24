@@ -1,18 +1,16 @@
 package server;
 
 import java.rmi.RemoteException;
-import java.rmi.server.RemoteServer;
-import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
 
+import common.World;
+
 import client.ClientInterface;
-import client.ControlInterface;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
 	/**
@@ -49,7 +47,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	/**
 	 * List of the battles taking place
 	 */
-	private ArrayList<Thread> battles;
+	//private ArrayList<Thread> battles;
 
 	/**
 	 * Server constructor
@@ -59,6 +57,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 */
 	public Server(String worldName) throws RemoteException {
 		this.world = new World(worldName);
+		System.out.println("World size: " + world.getWidth() + "x" + world.getHeight());
 	}
 
 	/**
@@ -67,52 +66,53 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @param name
 	 */
 	public UUID join(String name, ClientInterface client) throws RemoteException {
-		// if(isFull()){
-		// send("The server is full.");
-		// } else {
-		// rest of join
-		// }
 		System.out.print("Player " + name + " tries to join - ");
 
 		UUID id = UUID.randomUUID();
 
 		for (Player player : players.values()) {
 			if (name.equals(player.getName())) {
-				System.out.println("without success");
+				System.out.println("without success.");
 				return null;
 			}
 		}
-
-		// int[] pos = randomPlayerPos();
-		// Player player = new Player(name, pos[0], pos[1]);
-
-		// try {
-		// sendAll(name + " has joined.");
-		// } catch (RemoteException e) {
-		// e.printStackTrace();
-		// }
-
-		// TODO Return some kind of error to the client if world already
-		// contains a player on each spot
-
-		/*
-		 * TODO Generate a list of all unused spots on the world Randomly choose
-		 * one Create new player with chosed coordinates (replace 0, 0 below)
-		 */
-		Player player = new Player(name, 0, 0);
+		
+		//Make a list of all spots on the world 
+		int width = world.getWidth();
+		int height = world.getHeight();
+		ArrayList<int[]> spots = new ArrayList<int[]>();
+		for (int i = 0; i < width; i++) {
+			for (int j = 0; j < height; j++) {
+				int[] spot = {j, i};
+				spots.add(spot);
+			}
+		}
+		//Remove all used spots
+		Iterator<int[]> iterator = spots.iterator();
+		while(iterator.hasNext()) {
+		    int[] spot = iterator.next();
+		    for (Player player : players.values()) {
+		    	if ((spot[0]+"-"+spot[1]).equals(player.getX()+"-"+player.getY())) {
+			        iterator.remove();
+			        break;
+			    }
+			}
+		}
+		//Grab a random spot from list of empty spots for our new player.
+		int index = (new Random()).nextInt(spots.size());
+		int[] spot = spots.get(index);
+		
+		Player player = new Player(name, spot[0], spot[1]);
 		player.setClient(client);
-
-		// TODO set client reference via player.setClient()
-
+		
 		players.put(id, player);
 		roamingPlayers.add(id);
-		// TODO Return some "yay you joined" message
-		// Tell everyone _name_ joined
-		System.out.println("successfully");
-
+		System.out.println("successfully.");
+		System.out.println("Spots left: " + (spots.size() - 1));
+		
 		return id;
 	}
-
+	
 	/**
 	 * Function allowing the client to say "I'm ready to start the game"
 	 */
@@ -168,33 +168,39 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				// Notify player that he has to give us his new action now
 			}
 
+			System.out.println("Wait for players to take action");
+			
 			// Wait until all players set their next action
 			while (roamingPlayers.size() > playerActions.size()) {
 				// Wait...
 				// I think this also works with people suddenly getting out of
 				// battle
+				System.out.print(".");
+				try {
+					Thread.sleep(300);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
-
+			
+			System.out.println("Updating player positions");
+			
 			// Everyone set his move, so let's move it
 			for (UUID playerID : roamingPlayers) {
 				Player player = players.get(playerID);
 				String action = playerActions.get(playerID);
-				switch (action) {
-				case "north":
+				HashMap<String, Byte> playerArea = world.getArea(player.getX(), player.getY());
+				if (action.equals("North") && playerArea.containsKey("North")) {
 					player.setY(player.getY() - 1);
-					break;
-				case "east":
+				} else if (action.equals("East") && playerArea.containsKey("East")) {
 					player.setX(player.getX() + 1);
-					break;
-				case "south":
+				} else if (action.equals("South") && playerArea.containsKey("South")) {
 					player.setY(player.getY() + 1);
-					break;
-				case "west":
+				} else if (action.equals("West") && playerArea.containsKey("West")) {
 					player.setX(player.getX() - 1);
-					break;
-				default:
-					// Stay
-					break;
+				} else {
+					//Stay
 				}
 			}
 
@@ -215,41 +221,11 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		// The end
 	}
 
-	/**
-	 * Starts battle between two players
-	 * 
-	 * @param players
-	 *            List of players that are starting a battle
-	 */
-	public void initiateBattle(ArrayList<String> players) {
-		// These players aren't roaming anymore
-		for (String player : players) {
-			roamingPlayers.remove(player);
-		} /**
-			 * TODO Start battle via something like Battle battle = new
-			 * Battle(player1, player2); Add battle to list of battles
-			 * battle.start(); to start the thread
-			 */
-	}
-	// public void initiateBattle(ArrayList<Player> ps) {
-	// for (Player player : ps) {
-	// roamingPlayers.remove(player);
-	// }
-	// Battle battle = new Battle(ps);
-	// }
-	//
-	// public void initiateAllBattles(ArrayList<ArrayList<Player>> all){
-	// for(ArrayList<Player> ps : all) {
-	// initiateBattle(ps);
-	// }
-	// }
-	//
-
 	public void updatePlayers() {
 		for (UUID id : players.keySet()) {
 			Player player = players.get(id);
 			try {
-				player.getClient().updateData(player.getHealth(), player.getX(), player.getY());
+				player.getClient().updateData(player.getHealth(), player.getX(), player.getY(), world.getArea(player.getX(), player.getY()));
 			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -270,9 +246,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		System.out.println(players.get(id).getName() + " chose " + dir);
 		System.out.println(playerActions.size() + "/" + roamingPlayers.size() + " have chosen");
 	}
-
 }
 
+/*
 //	 public void sendAll(String msg) throws RemoteException {
 //	 synchronized (players) {
 //	 for (Entry<String, Player> p : players.entrySet()) {
@@ -375,3 +351,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 //			return all;
 //		}
 //	}}
+//public void initiateBattle(ArrayList<Player> ps) {
+	// for (Player player : ps) {
+	// roamingPlayers.remove(player);
+	// }
+	// Battle battle = new Battle(ps);
+	// }
+	//
+	// public void initiateAllBattles(ArrayList<ArrayList<Player>> all){
+	// for(ArrayList<Player> ps : all) {
+	// initiateBattle(ps);
+	// }
+	// }
+	//
