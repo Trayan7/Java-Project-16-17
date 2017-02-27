@@ -1,9 +1,15 @@
-package server;
+package common;
+
+import java.io.Serializable;
+import java.util.UUID;
 
 import client.ClientInterface;
 
 
-public class Player {
+public class Player implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
+
 	/*
 	 * Current health of player
 	 */
@@ -25,18 +31,22 @@ public class Player {
 	private String name;
 	
 	/**
+	 * ID of the player
+	 */
+	private UUID id;
+	
+	/**
 	 * The client object of this player
 	 */
 	private ClientInterface client;
-	
-	//TODO Some kind of reference to the client
 	
 	/**
 	 * Player constructor
 	 * @param x Start x coordinate of player
 	 * @param y Start y coordinate of player 
 	 */
-	public Player(String name, int x, int y) {
+	public Player(UUID id, String name, int x, int y) {
+		this.id = id;
 		this.name = name;
 		this.x = x;
 		this.y = y;
@@ -115,5 +125,9 @@ public class Player {
 	 */
 	public String getName() {
 		return name;
+	}
+	
+	public UUID getID() {
+		return id;
 	}
 }

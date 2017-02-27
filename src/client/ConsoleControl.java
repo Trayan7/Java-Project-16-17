@@ -1,10 +1,12 @@
 package client;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 
+import common.Player;
 import common.World;
 
 
@@ -86,5 +88,24 @@ public class ConsoleControl implements ControlInterface {
 		System.out.print("Press ENTER once you're ready to play.");
 		scanner.nextLine();
 		System.out.println("READY");
+	}
+	
+	public int getTarget(ArrayList<Player> players) {
+		System.out.println();
+		System.out.println("Please choose a target to attack:");
+		for (int i = 0; i < players.size(); i++) {
+			Player target = players.get(i);
+			System.out.println((i + 1) + " - " + target.getName() + " -> " + target.getHealth() + "%");
+		}
+		System.out.println();
+		try {
+			int n = Integer.parseInt(System.console().readLine());
+			if (n < 1 || n > players.size()) {
+				return 0;
+			}
+			return n;
+		} catch (NumberFormatException e) {
+			return 0;
+		}
 	}
 }

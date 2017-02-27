@@ -8,8 +8,9 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
 
+import common.Battle;
+import common.Player;
 import common.World;
-
 import client.ClientInterface;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
@@ -43,17 +44,13 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * 
 	 */
 	private HashMap<UUID, String> playerActions;
-
-	/**
-	 * List of the battles taking place
-	 */
-	//private ArrayList<Thread> battles;
-
+	
+	private ArrayList<Battle> battles = new ArrayList<Battle>();
+	
 	/**
 	 * Server constructor
 	 * 
-	 * @param worldName
-	 *            The name of the world to be loaded, empty if new generated
+	 * @param worldName The name of the world to be loaded, empty if new generated
 	 */
 	public Server(String worldName) throws RemoteException {
 		this.world = new World(worldName);
@@ -102,7 +99,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		int index = (new Random()).nextInt(spots.size());
 		int[] spot = spots.get(index);
 		
-		Player player = new Player(name, spot[0], spot[1]);
+		//Player player = new Player(id, name, spot[0], spot[1]);
+		Player player = new Player(id, name, 0, players.size());
 		player.setClient(client);
 		
 		players.put(id, player);
@@ -167,14 +165,24 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				}
 				// Notify player that he has to give us his new action now
 			}
-
+			
 			System.out.println("Wait for players to take action");
 			
 			// Wait until all players set their next action
-			while (roamingPlayers.size() > playerActions.size()) {
+			while (roamingPlayers.size() == 0 || roamingPlayers.size() > playerActions.size()) {
+				if (players.size() <= 1) {
+					//Out of players
+					//End game
+					for (Player player : players.values()) {
+						try {
+							player.getClient().winGame();
+						} catch (RemoteException e) {
+							//Whatever
+						}
+						System.exit(0);
+					}
+				}
 				// Wait...
-				// I think this also works with people suddenly getting out of
-				// battle
 				System.out.print(".");
 				try {
 					Thread.sleep(300);
@@ -203,17 +211,53 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 					//Stay
 				}
 			}
-
-			/**
-			 * TODO Iterate over all spots on the world Check if any players are
-			 * on the same spot
-			 */
-			// why not iterate over all roaming players and check if their
-			// coordinates match?
-			// Because you end up with n! checks for n players, while only n
-			// checks for n spots
-			// You don't need to compare everyone to anyone.I already
-			// found a solution.
+			
+			//Generate list of players by their spots
+			@SuppressWarnings("unchecked")
+			ArrayList<Player> spots[][] = new ArrayList[world.getWidth()][world.getHeight()];
+			for (int i = 0; i < world.getWidth(); i++) {
+				for (int j = 0; j < world.getHeight(); j++) {
+					spots[i][j] = new ArrayList<Player>();
+				}
+			}
+			for (UUID id: roamingPlayers)  {
+				Player player = players.get(id);
+				spots[player.getX()][player.getY()].add(player);
+			}
+			
+			//Go over all spots and initiate new battles or add players to them
+			for (int i = 0; i < spots.length; i++) {
+				for (int j = 0; j < spots[i].length; j++) {
+					boolean battleFound = false;
+					for (Battle battle: battles) {
+						if (battle.getX() == i && battle.getY() == j) {
+							//We found a battle on this spot
+							battleFound = true;
+							System.out.println("Found an ongoing battle, joining");
+							for (Player newBattler : spots[i][j]) {
+								//Add all players battling
+								battle.addPlayer(newBattler);
+							}
+						}
+					}
+					if (!battleFound && spots[i][j].size() > 1) {
+						//More than one player on the spot, start battle
+						System.out.println("Start a battle");
+						try {
+							Battle battle = new Battle(this, i, j);
+							for (Player newBattler : spots[i][j]) {
+								battle.addPlayer(newBattler);
+								roamingPlayers.remove(newBattler.getID());
+							}
+							battles.add(battle);
+							new Thread(battle).start();
+						} catch (RemoteException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+			
 			updatePlayers();
 		}
 
@@ -221,15 +265,25 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		// The end
 	}
 
-	public void updatePlayers() {
-		for (UUID id : players.keySet()) {
-			Player player = players.get(id);
+	public synchronized void updatePlayers() {
+		ArrayList<UUID> dead = new ArrayList<UUID>();
+		for (Player player : players.values()) {
+			boolean disconnect = false;
 			try {
 				player.getClient().updateData(player.getHealth(), player.getX(), player.getY(), world.getArea(player.getX(), player.getY()));
 			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				disconnect = true;
 			}
+			if (disconnect || player.getHealth() <= 0) {
+				dead.add(player.getID());
+			}
+		}
+		
+		for (UUID id : dead) {
+			for (Battle battle: battles) {
+				battle.removePlayer(id);
+			}
+			players.remove(id);
 		}
 
 		/**
@@ -246,121 +300,28 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		System.out.println(players.get(id).getName() + " chose " + dir);
 		System.out.println(playerActions.size() + "/" + roamingPlayers.size() + " have chosen");
 	}
+	
+	public void endBattle(Battle battle) {
+		System.out.println(roamingPlayers.size() + " roaming players.");
+		System.out.println(players.size() + " total players.");
+		battles.remove(battle);
+		try {
+			for (Player player : battle.getPlayers()) {
+				if (player.getHealth() > 0) {
+					roamingPlayers.add(player.getID());
+				}
+			}
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println(roamingPlayers.size() + " roaming players.");
+		System.out.println(players.size() + " total players.");
+		updatePlayers();
+	}
+	
+	public void attack(UUID target) throws RemoteException {
+		players.get(target).setHealth(players.get(target).getHealth() - 100);
+		updatePlayers();
+	}
 }
-
-/*
-//	 public void sendAll(String msg) throws RemoteException {
-//	 synchronized (players) {
-//	 for (Entry<String, Player> p : players.entrySet()) {
-//	 try {
-//	 p.getValue().getControlInterface().send(msg);
-//	 } catch (RemoteException _) {
-//	 System.out.println(p.getKey() + " failed to receive :\"" + msg + "\"");
-//	 }
-//	 }
-//	 }
-//	 }
-
-//	/ **
-//	 * Checks if all tiles are taken.
-//	 * @return
-//	 */
-//	 public boolean isFull(){
-//	 Boolean[][] isUsed = new Boolean[world.zeilen][world.spalten];
-//	 for(int i = 0; i < world.zeilen; i++) {
-//	 for(int j = 0; j < world.spalten; j++){
-//	 isUsed[i][j] = false;
-//	 }
-//	 }
-//	 for (Entry<String, Player> p : players.entrySet()) {
-//	 isUsed[p.getValue().getY()][p.getValue().getY()] = true;
-//	 }
-//	 for(int i = 0; i < world.zeilen; i++) {
-//	 for(int j = 0; j < world.spalten; j++){
-//	 if(isUsed[i][j] == false) {
-//	 return false;
-//	 }
-//	 }
-//	 }
-//	 return true;
-//	 }
-
-//	/**
-//	 * Randomly selects a position. If there is already a Player on that tile,
-//	 * selects a new random position up to MAX_RANDOM_POSITION_TRIES.
-//	 * Then goes through all possible position and selects the first free one.
-//	 *
-//	 * @return int[0] = zeilen/y, int[1] = spalten/x, null if failed.
-//	 */
-//	 public int[] randomPlayerPos() {
-//	 Boolean[][] isUsed = new Boolean[world.zeilen][world.spalten];
-//	 for(int i = 0; i < world.zeilen; i++) {
-//	 for(int j = 0; j < world.spalten; j++){
-//	 isUsed[i][j] = false;
-//	 }
-//	 }
-//	 for (Entry<String, Player> p : players.entrySet()) {
-//	 isUsed[p.getValue().getY()][p.getValue().getY()] = true;
-//	 }
-//	 for(int i = 0; i < MAX_RANDOM_POSITION_TRIES; i++){
-//	 int y = rgen.nextInt(world.zeilen);
-//	 int x = rgen.nextInt(world.spalten);
-//	 if(isUsed[y][x] == false) {
-//	 int[] position = {y, x};
-//	 return position;
-//	 }
-//	 }
-//	 for(int i = 0; i < world.zeilen; i++) {
-//	 for(int j = 0; j < world.spalten; j++){
-//	 if(isUsed[i][j] == false){
-//	 int[] position = {i, j};
-//	 return position;
-//	 }
-//	 }
-//	 }
-//	 return null;
-//	 }
-//	
-//	public ArrayList<ArrayList<Player>> allBattles() {
-//		Player[][] playerMap = new Player[world.zeilen][world.spalten];
-//		ArrayList<Player> battles = new ArrayList<Player>();
-//		ArrayList<ArrayList<Player>> all = new ArrayList<ArrayList<Player>>();
-//		for (Entry<UUID, Player> p : players.entrySet()) {
-//			ArrayList<Player> battle = new ArrayList<Player>();
-//			int y = p.getValue().getY();
-//			int x = p.getValue().getX();
-//			if (playerMap[y][x] == null) {
-//				playerMap[y][x] = p.getValue();
-//			} else {
-//				battle.add(playerMap[y][x]);
-//				battle.add(p.getValue());
-//			}
-//		}
-//		// slow but faster than checking each tile for every player
-//		for (Player p1 : battles) {
-//			ArrayList<Player> l = new ArrayList<Player>();
-//			l.add(p1);
-//			battles.remove(p1);
-//			for (Player p2 : battles) {
-//				if (p1.getX() == p2.getX() && p1.getY() == p2.getY() && !(p1.getName() == p2.getName())) {
-//					l.add(p2);
-//					battles.remove(p2);
-//				}
-//				all.add(l);
-//			}
-//			return all;
-//		}
-//	}}
-//public void initiateBattle(ArrayList<Player> ps) {
-	// for (Player player : ps) {
-	// roamingPlayers.remove(player);
-	// }
-	// Battle battle = new Battle(ps);
-	// }
-	//
-	// public void initiateAllBattles(ArrayList<ArrayList<Player>> all){
-	// for(ArrayList<Player> ps : all) {
-	// initiateBattle(ps);
-	// }
-	// }
-	//
