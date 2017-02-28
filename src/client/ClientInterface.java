@@ -2,7 +2,6 @@ package client;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import common.BattleInterface;

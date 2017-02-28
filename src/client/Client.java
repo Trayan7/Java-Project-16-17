@@ -7,6 +7,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.util.UUID;
 
 import common.BattleInterface;
@@ -22,6 +23,8 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 
 	private ServerInterface server;
 	
+	private Scanner scanner = new Scanner(System.in);
+	
 	int health = 100;
 	
 	int x = 0;
@@ -30,48 +33,94 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	
 	String nextAction = "";
 	
+	//TODO Ask Server for world
 	World world = new World("empty");
 	
 	private BattleInterface battle;
 	
 	private HashMap<UUID, Player> players = new HashMap<UUID, Player>();
 	
+	String type;
+	
+	ConsoleControl console;
+	GUIControl gui;
+	
+	
 	public Client() throws RemoteException {
-		System.out.println("Started client");
+		System.out.println("To start with GUI enter: \"GUIControl\"");
+		System.out.println("To start in console enter: \"ConsoleControl\"");
 		
-		ConsoleControl control = new ConsoleControl(world);
+		type = scanner.next();
+		scanner.nextLine();
 		
-		//String host = control.getHost();
-		//Integer port = control.getPort();
+		while(!type.equals("GUIControl") && !type.equals("ConsoleControl")) {
+			System.out.println(type + " is not a valid control.");
+			System.out.println("Enter: : \"GUIControl\" or \"ConsoleControl\"");
+			type = scanner.nextLine();
+		}
 		
-		String uri = "rmi://localhost:1099/ServerInterface";
+		String host;
+		int port;
+		if(type.equals("ConsoleControl")) {
+			console = new ConsoleControl(world);
+			host = console.getHost();
+			port = console.getPort();
+		} else {
+			gui = new GUIControl(world);
+			host = gui.getHost();
+			port = gui.getPort();
+		}
+		
+		String uri = "rmi://"+ host +":"+ port +"/ServerInterface";
 		
 		try {
 			server = (ServerInterface) Naming.lookup(uri);
 			
 			UUID id = null;
 			while (id == null) {
-				String username = control.getUsername();
+				String username;
+				if(type.equals("ConsoleControl")) {
+					username = console.getUsername();				
+				} else {
+					username = gui.getUsername();
+				}
 				id = server.join(username, this);
 			}
 			
-			control.waitUntilReady();
+			if(type.equals("ConsoleControl")) {
+				console.waitUntilReady();				
+			} else {
+				gui.waitUntilReady();
+			}
 			//Ready
 			server.getReady(id);
 			
 			//While we're in the game
+			//(Busy waiting, but if we use wait() we need a lock)
 			while (health > 0) {
 				if (this.battle != null) {
 					//Gonna fight
 					ArrayList<Player> targets = battle.getPlayers();
 					Collections.shuffle(targets);
-					int decision = control.getTarget(targets);
+					
+					int decision;
+					if(type.equals("ConsoleControl")) {
+						decision = console.getTarget(targets);
+					} else {
+						decision = gui.getTarget(targets);
+					}
+					
 					if (decision == 0) {
-						System.out.println("Decision is faulty.");
+						if(type.equals("ConsoleControl")) {
+						System.out.println("Decision is faulty.");							
+						} //GUI already has to wait until decision!=0 to close window.
 						continue;
 					}
+					
 					if (this.battle == null) {
-						System.out.println("No battle running anymore.");
+						if(type.equals("ConsoleControl")) {
+						System.out.println("No battle running anymore.");							
+						} //GUI if there is no battle there is no battle window
 						continue;
 					}
 					Player target = targets.get(decision - 1);
@@ -83,7 +132,9 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 						}
 					}
 					if (!validTarget) {
-						System.out.println("Target became invalid.");
+						if(type.equals("ConsoleControl")) {
+						System.out.println("Target became invalid.");							
+						}
 						continue;
 					}
 					battle.attack(target.getID());
@@ -92,7 +143,12 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 					//Could add stuff like "pick up item" or something like that later					
 					switch (nextAction) {
 					case "move":
-						String dir = control.getMoveDirection(x, y);
+						String dir;
+						if(type.equals("ConsoleControl")) {
+							dir = console.getMoveDirection(x, y);							
+						} else {
+							dir = gui.getMoveDirection(x, y);
+						}
 						server.makeMove(id, dir);
 						nextAction = "";
 						break;
@@ -109,7 +165,12 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		this.health = health;
 		this.x = x;
 		this.y = y;
-		System.out.println("Amount received fields: " + area.size());
+		if(type.equals("ConsoleControl")) {
+		System.out.println("Amount received fields: " + area.size());			
+		} else {
+			//Way easier to do this in GUIControl
+			gui.updateGui(health, x, y, area);
+		}
 		if (area.containsKey("North")) world.setBiome(this.x, this.y - 1, area.get("North"));
 		if (area.containsKey("East")) world.setBiome(this.x + 1, this.y, area.get("East"));
 		if (area.containsKey("West")) world.setBiome(this.x - 1, this.y, area.get("West"));
@@ -117,7 +178,11 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		if (area.containsKey("Stay")) world.setBiome(this.x, this.y, area.get("Stay"));
 		
 		if (health <= 0) {
-			System.out.println("YOU DIED");
+			if(type.equals("ConsoleControl")) {
+			System.out.println("YOU DIED");				
+			} else {
+				gui.youDied();
+			}
 		    System.exit(0);
 		}
 	}
@@ -138,7 +203,11 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	}
 	
 	public void winGame() throws RemoteException {
-		System.out.println("YOU WIN");
+		if(type.equals("ConsoleControl")) {
+			System.out.println("YOU WIN");			
+		} else {
+			gui.youWin();
+		}
 		System.exit(0);
 	}
 }

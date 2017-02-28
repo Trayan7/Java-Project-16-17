@@ -5,12 +5,9 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Random;
-
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -18,40 +15,36 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.SwingUtilities;
-
 import common.Player;
 import common.World;
 
 public class GUIControl extends JFrame implements ControlInterface, ActionListener {
 
-	World world;
+	/*
+	 * TODO
+	 * Find out what synch sorcery messes up the tiles even when hard coding
+	 * Come up with good fix for busy wait
+	 * create text field for status of game e.g. choose a direction
+	 * Make the battle window close itself if the target is invalid
+	 * make windows only close appropriately
+	 * check whether or not the scrolling works
+	 */
 	
-	//Null pointer
-//	int mapWidth = world.getWidth();
-//	int mapHeigth = world.getHeight();
-
-	int mapWidth = 5;
-	int mapHeight = 5;
-	
-	//Needs some cleaning. Don't even need xPos and yPos
+	private JPanel[][] tileMap;
 	private static final long serialVersionUID = 1L;
-	static int height = 600;
-	static int width = 800;
-	int xPos = 0;
-	int yPos = 0;
-	static String title = "FortProg: Java Project";
-	static JFrame frame = null;
+	private String dir = "";
+	private static int height = 600;
+	private static int width = 800;
+	private static String title = "FortProg: Java Project";
+	private static JFrame frame = null;
 	int health = 100;
-	JProgressBar hp = hpBar(health);
+	private JProgressBar hp = hpBar(health);
 	static int maxHealth = 100;
-	static int BTN_SIZE = 50;
-	static String uName = "not updated, yet";
-	JScrollPane map;
-	JPanel[][] tileMap;
-	Random rgen = new Random();
-	int target = 0;
-	JPanel playerIcon;
+	private String uName = "not updated, yet";
+	private JLabel name = new JLabel(uName);
+	private JScrollPane map;
+	private int target = 0;
+	private JPanel playerIcon;
 
 	private Color cEmpty = Color.black;
 	private Color cForest = new Color(111, 232, 86);
@@ -60,28 +53,32 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	private Color cSwamp = new Color(89, 84, 43);
 	private Color cIsland = new Color(255, 228, 45);
 
-	String dir;
 
-	JButton north;
-	JButton east;
-	JButton west;
-	JButton south;
-	JButton stay;
+	private JButton north;
+	private JButton east;
+	private JButton west;
+	private JButton south;
+	private JButton stay;
 	
 	JFrame window;
-
+/**
+ * Creates GUIControl object and starts the main window of the GUI.
+ * @param world an empty world to fill while playing
+ */
 	public GUIControl(World world) {
-		this.world = world;
 		tileMap = new JPanel[world.getHeight()][world.getWidth()];
 		for(int i = 0; i < world.getHeight(); i++){
 			for(int j = 0; j < world.getWidth(); j++){
 				tileMap[i][j] = null;
 			}
 		}
-//		window = createGUI();
-		createGUI();
+		window = createGUI();
 	}
 
+	/**
+	 * Starts the main window of the GUI
+	 * @return JFrame of the main window of the GUI
+	 */
 	public JFrame createGUI() {
 		JFrame window = new JFrame(title);
 		window.setVisible(true);
@@ -92,31 +89,30 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		north = new JButton("N");
 		north.addActionListener(this);
 		north.setVisible(true);
-		north.setBounds(675, 25, BTN_SIZE, BTN_SIZE);
+		north.setBounds(675, 25, 50, 50);
 		east = new JButton("E");
 		east.addActionListener(this);
 		east.setVisible(true);
-		east.setBounds(725, 75, BTN_SIZE, BTN_SIZE);
+		east.setBounds(725, 75, 50, 50);
 		west = new JButton("W");
 		west.addActionListener(this);
 		west.setVisible(true);
-		west.setBounds(625, 75, BTN_SIZE, BTN_SIZE);
+		west.setBounds(625, 75, 50, 50);
 		south = new JButton("S");
 		south.addActionListener(this);
 		south.setVisible(true);
-		south.setBounds(675, 125, BTN_SIZE, BTN_SIZE);
+		south.setBounds(675, 125, 50, 50);
 		stay = new JButton("+");
 		stay.addActionListener(this);
 		stay.setVisible(true);
-		stay.setBounds(675, 75, BTN_SIZE, BTN_SIZE);
-
+		stay.setBounds(675, 75, 50, 50);
 		window.add(north);
 		window.add(east);
 		window.add(west);
 		window.add(south);
 		window.add(stay);
 
-		JLabel name = new JLabel(uName);
+		name = new JLabel(uName);
 		window.add(name);
 		name.setBounds(625, 225, 150, 25);
 		name.setVisible(true);
@@ -129,13 +125,13 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		map.setBounds(0, 0, 602, 572);
 		map.setLayout(null);
 		map.setVisible(true);
-		map.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-		map.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-		map.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 15));
-		map.getVerticalScrollBar().setPreferredSize(new Dimension(15, 0));
+//		map.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+//		map.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+//		map.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 15));
+//		map.getVerticalScrollBar().setPreferredSize(new Dimension(15, 0));
 		
 		playerIcon = new JPanel();
-		playerIcon.setBounds(xPos * 25 + 100 - 5, yPos * 25 + 100 - 5, 9, 9);
+		playerIcon.setBounds(0,0, 9, 9);
 		playerIcon.setBackground(Color.red);
 		playerIcon.setLayout(null);
 		map.add(playerIcon);
@@ -145,6 +141,13 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 
 	}
 
+	/**
+	 * Updates the GUI
+	 * @param health Player health
+	 * @param x Player x osition
+	 * @param y Player y position
+	 * @param area Area around and including player
+	 */
 	public void updateGui(int health, int x, int y, HashMap<String, Byte> area) {
 		hp.setValue(maxHealth - health);
 		hp.setString(health + "/" + maxHealth);
@@ -155,28 +158,33 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		}
 		
 		this.health = health;
-		this.xPos = x;
-		this.yPos = y;
 		playerIcon.setLocation(x * 25 + 100 + 7, y * 25 + 100 + 7);
 		
-		if (area.containsKey("North") && tileMap[this.yPos - 1][this.xPos] == null) {
-			createTile(this.xPos, this.yPos - 1, area.get("North"));
+		//This works correctly
+		if (area.containsKey("North") && tileMap[y - 1][x] == null) {
+			createTile(x, y - 1, area.get("North"));
 		}
-		if (area.containsKey("East") && tileMap[this.yPos][this.xPos + 1] == null) {
-			createTile(this.xPos + 1, this.yPos, area.get("East"));			
+		if (area.containsKey("East") && tileMap[y][x + 1] == null) {
+			createTile(x + 1, y, area.get("East"));			
 		}
-		if (area.containsKey("West") && tileMap[this.yPos][this.xPos - 1] == null) {
-			createTile(this.xPos - 1, this.yPos, area.get("West"));			
+		if (area.containsKey("West") && tileMap[y][x - 1] == null) {
+			createTile(x - 1, y, area.get("West"));			
 		}
-		if (area.containsKey("South") && tileMap[this.yPos + 1][this.xPos] == null) {
-			createTile(this.xPos, this.yPos + 1, area.get("South"));			
+		if (area.containsKey("South") && tileMap[y + 1][x] == null) {
+			createTile(x, y + 1, area.get("South"));			
 		}
-		if (area.containsKey("Stay") && tileMap[this.yPos][this.xPos] == null){
-			createTile(this.xPos, this.yPos, area.get("Stay"));			
+		if (area.containsKey("Stay") && tileMap[y][x] == null){
+			createTile(x, y, area.get("Stay"));			
 		}
 		repaint();
 	}
 
+	//Will be needed for list of active Players
+	/**
+	 * Creates a health bar for the player
+	 * @param health Current health
+	 * @return JProgressBar as health bar
+	 */
 	public JProgressBar hpBar(int health) {
 		hp = new JProgressBar();
 		hp.setString(health + "/" + maxHealth);
@@ -184,6 +192,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		hp.setValue(maxHealth - health);
 		hp.setMaximum(maxHealth);
 		hp.setVisible(true);
+		//Since we have no Player list
 		hp.setBounds(625, 250, 150, 50);
 		if (health <= 0.2 * maxHealth) {
 			hp.setBackground(Color.RED);
@@ -193,11 +202,30 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		return hp;
 	}
 
+	/**
+	 * Opens a window to ask for user name.
+	 * @return The chosen name
+	 */
 	public String getUsername() {
 		uName = JOptionPane.showInputDialog(frame, "Enter username: ", title, JOptionPane.QUESTION_MESSAGE);
+		name.setText(uName);
+		repaint();
+		return uName;
+	}
+	
+	/**
+	 * Opens a window to ask for a different user name
+	 * @return
+	 */
+	public String getUsernameFailed() {
+		uName = JOptionPane.showInputDialog(frame, "That username is already taken: ", title, JOptionPane.ERROR_MESSAGE);
 		return uName;
 	}
 
+	/**
+	 * Opens a window to ask for server address.
+	 * @return The chosen address
+	 */
 	public String getHost() {
 		String host = JOptionPane.showInputDialog(frame, "Enter server address: ", title, JOptionPane.QUESTION_MESSAGE);
 		if (host.length() == 0) {
@@ -207,66 +235,95 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		}
 	}
 
-	public String getPort() {
+	/**
+	 * Opens a window to ask for server port
+	 * @return The chosen port
+	 */
+	public int getPort() {
 		String sPort = JOptionPane.showInputDialog(frame, "Enter server port: ", title, JOptionPane.QUESTION_MESSAGE);
 		if (sPort.length() == 0) {
-			return "1099";
+			return 1099;
 		}
 		try {
 			int port = Integer.parseInt(sPort);
 			if (port <= 0 || port > 65536) {
 				return getPortFailed();
 			} else {
-				return sPort;
+				return Integer.parseInt(sPort);
 			}
 		} catch (NumberFormatException exception) {
 			return getPortFailed();
 		}
 	}
 
-	public static String getPortFailed() {
+	/**
+	 * Opens a window to ask for another server port
+	 * @return The chosen port
+	 */
+	public int getPortFailed() {
 		String sPort = JOptionPane.showInputDialog(frame, "That wasn't a valid port: ", title,
 				JOptionPane.ERROR_MESSAGE);
 		if (sPort.length() == 0) {
-			return "1099";
+			return 1099;
 		}
 		try {
 			int port = Integer.parseInt(sPort);
 			if (port <= 0 || port > 65536) {
 				return getPortFailed();
 			} else {
-				return sPort;
+				return Integer.parseInt(sPort);
 			}
 		} catch (NumberFormatException exception) {
 			return getPortFailed();
 		}
 	}
 
+	/**
+	 * Opens a window to wait for the user to be ready
+	 */
 	void waitUntilReady() {
 		JOptionPane.showConfirmDialog(frame, "Are you ready?", "title", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 	}
 
+	/**
+	 * Opens a window to let the user know that he died
+	 */
 	void youDied() {
 		JOptionPane.showConfirmDialog(frame, "YOU DIED!", "title", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 	}
 
+	/**
+	 * Opens a window to let the user know that he won
+	 */
 	void youWin() {
 		JOptionPane.showConfirmDialog(frame, "YOU WIN!", "title", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 	}
 
-	public String getMoveDirection() {
+	/**
+	 * Returns the last direction button the user clicked
+	 * @param x irrelevant
+	 * @param y irrelevant
+	 * @return String of direction
+	 */
+	public String getMoveDirection(int x, int y) {
+		//(Busy waiting, but if we use wait() we need a lock)
+		while(!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West") && !dir.equals("Stay")) {
+			System.out.println("BUSY WAIT");
+		}
 		String answer = dir;
 		dir = "";
 		return answer;
 	}
 
-	public String getUsernameFailed() {
-		return JOptionPane.showInputDialog(frame, "That username is already taken: ", title, JOptionPane.ERROR_MESSAGE);
-	}
-
+/**
+ * Creates a new tile at a given position in map with the background color defined by the biome
+ * @param x X position of tile
+ * @param y Y position of tile
+ * @param n Biome of the tile
+ */
 	public void createTile(int x, int y, Byte n) {
 		JPanel tile = new JPanel();
 		switch (n) {
@@ -289,33 +346,45 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 			tile.setBackground(cIsland);
 			break;
 		}
+		tile.setBounds((x * 25) + 100, (y * 25) + 100, 25, 25);
 		tile.setLayout(null);
-		tile.setBounds(x * 25 + 100, y * 25 + 100, 25, 25);
 		tile.setVisible(true);
 		tileMap[y][x] = tile;
-		map.add(tileMap[y][x]);
+		map.add(tile);
 	}
 
+	/**
+	 * Action Events of the direction buttons
+	 */
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource().equals(north)) {
 			dir = "North";
+			System.out.println("dir = " + dir);
 		} else if (e.getSource().equals(east)) {
 			dir = "East";
+			System.out.println("dir = " + dir);
 		} else if (e.getSource().equals(west)) {
 			dir = "West";
+			System.out.println("dir = " + dir);
 		} else if (e.getSource().equals(south)) {
 			dir = "South";
+			System.out.println("dir = " + dir);
 		} else if (e.getSource().equals(stay)) {
 			dir = "Stay";
+			System.out.println("dir = " + dir);
 		}
 	}
 
+	/**
+	 * Opens a window of all possible targets in a scrambled order and lets the user click any of those targets
+	 * @param targets ArrayList of the players that are in the battle
+	 * @return Returns the index + 1 of the chosen target
+	 */
 	public int getTarget(ArrayList<Player> targets) {
 		JFrame battle = new JFrame("Battle");
 		battle.setLayout(null);
 		battle.setSize(250, targets.size() * 25 + 75);
 		battle.setVisible(true);
-		//Stack may be better
 		ArrayList<Integer> positions = new ArrayList<>();
 		for (int i = 0; i < targets.size(); i++) {
 			positions.add(i);
@@ -341,7 +410,6 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 			try {
 				Thread.sleep(100);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
