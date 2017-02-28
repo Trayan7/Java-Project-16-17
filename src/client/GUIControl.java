@@ -22,11 +22,10 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 
 	/*
 	 * TODO
-	 * Find out what synch sorcery messes up the tiles even when hard coding
 	 * Come up with good fix for busy wait
 	 * create text field for status of game e.g. choose a direction
 	 * Make the battle window close itself if the target is invalid
-	 * make windows only close appropriately
+	 * make windows only close when appropriate
 	 * check whether or not the scrolling works
 	 */
 	
@@ -72,7 +71,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 				tileMap[i][j] = null;
 			}
 		}
-		window = createGUI();
+		createGUI();
 	}
 
 	/**
