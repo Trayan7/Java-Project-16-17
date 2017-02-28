@@ -4,7 +4,6 @@ import java.rmi.Naming;
 
 import server.Server;
 import client.Client;
-import client.GUIClient;
 
 public class Main {
 	public static void main(String[] args) {
@@ -23,17 +22,10 @@ public class Main {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		} else if (args[0].equals("client")) {
-			try {
-				@SuppressWarnings("unused")
-				Client client = new Client();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
 		} else {
 			try {
 				@SuppressWarnings("unused")
-				GUIClient client = new GUIClient();
+				Client client = new Client();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
