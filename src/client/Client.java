@@ -42,9 +42,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	
 	String type;
 	
-	ConsoleControl console;
-	GUIControl gui;
-	
+	ControlInterface control;
 	
 	public Client() throws RemoteException {
 		System.out.println("To start with GUI enter: \"GUIControl\"");
@@ -62,16 +60,18 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		String host;
 		int port;
 		if(type.equals("ConsoleControl")) {
-			console = new ConsoleControl(world);
-			host = console.getHost();
-			port = console.getPort();
+			control = new ConsoleControl(world, this);
 		} else {
-			gui = new GUIControl(world);
-			host = gui.getHost();
-			port = gui.getPort();
+			control = new GUIControl(world, this);
 		}
 		
+		host = control.getHost();
+		port = control.getPort();
+		
 		String uri = "rmi://"+ host +":"+ port +"/ServerInterface";
+		//type = "GUIControl";
+		//gui = new GUIControl(world);
+		//String uri = "rmi://localhost:1099/ServerInterface";
 		
 		try {
 			server = (ServerInterface) Naming.lookup(uri);
@@ -79,19 +79,11 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 			UUID id = null;
 			while (id == null) {
 				String username;
-				if(type.equals("ConsoleControl")) {
-					username = console.getUsername();				
-				} else {
-					username = gui.getUsername();
-				}
+				username = control.getUsername();
 				id = server.join(username, this);
 			}
 			
-			if(type.equals("ConsoleControl")) {
-				console.waitUntilReady();				
-			} else {
-				gui.waitUntilReady();
-			}
+			control.waitUntilReady();
 			//Ready
 			server.getReady(id);
 			
@@ -103,24 +95,13 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 					ArrayList<Player> targets = battle.getPlayers();
 					Collections.shuffle(targets);
 					
-					int decision;
-					if(type.equals("ConsoleControl")) {
-						decision = console.getTarget(targets);
-					} else {
-						decision = gui.getTarget(targets);
-					}
+					int decision = control.getTarget(targets);
 					
 					if (decision == 0) {
-						if(type.equals("ConsoleControl")) {
-						System.out.println("Decision is faulty.");							
-						} //GUI already has to wait until decision!=0 to close window.
 						continue;
 					}
 					
 					if (this.battle == null) {
-						if(type.equals("ConsoleControl")) {
-						System.out.println("No battle running anymore.");							
-						} //GUI if there is no battle there is no battle window
 						continue;
 					}
 					Player target = targets.get(decision - 1);
@@ -132,9 +113,6 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 						}
 					}
 					if (!validTarget) {
-						if(type.equals("ConsoleControl")) {
-						System.out.println("Target became invalid.");							
-						}
 						continue;
 					}
 					battle.attack(target.getID());
@@ -144,11 +122,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 					switch (nextAction) {
 					case "move":
 						String dir;
-						if(type.equals("ConsoleControl")) {
-							dir = console.getMoveDirection(x, y);							
-						} else {
-							dir = gui.getMoveDirection(x, y);
-						}
+						dir = control.getMoveDirection(x, y);
 						server.makeMove(id, dir);
 						nextAction = "";
 						break;
@@ -165,12 +139,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		this.health = health;
 		this.x = x;
 		this.y = y;
-		if(type.equals("ConsoleControl")) {
-		System.out.println("Amount received fields: " + area.size());			
-		} else {
-			//Way easier to do this in GUIControl
-			gui.updateGui(health, x, y, area);
-		}
+		control.updateData(health);
 		if (area.containsKey("North")) world.setBiome(this.x, this.y - 1, area.get("North"));
 		if (area.containsKey("East")) world.setBiome(this.x + 1, this.y, area.get("East"));
 		if (area.containsKey("West")) world.setBiome(this.x - 1, this.y, area.get("West"));
@@ -178,12 +147,8 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		if (area.containsKey("Stay")) world.setBiome(this.x, this.y, area.get("Stay"));
 		
 		if (health <= 0) {
-			if(type.equals("ConsoleControl")) {
-			System.out.println("YOU DIED");				
-			} else {
-				gui.youDied();
-			}
-		    System.exit(0);
+			control.playerDeath();
+			System.exit(0);
 		}
 	}
 	
@@ -203,11 +168,19 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	}
 	
 	public void winGame() throws RemoteException {
-		if(type.equals("ConsoleControl")) {
-			System.out.println("YOU WIN");			
-		} else {
-			gui.youWin();
-		}
+		control.playerWin();
 		System.exit(0);
+	}
+	
+	public int getX() {
+		return x;
+	}
+	
+	public int getY() {
+		return y;
+	}
+	
+	public HashMap<String, Byte> getArea(int x, int y) {
+		return world.getArea(x, y);
 	}
 }

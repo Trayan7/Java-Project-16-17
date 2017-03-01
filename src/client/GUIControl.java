@@ -8,6 +8,7 @@ import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -15,6 +16,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+
 import common.Player;
 import common.World;
 
@@ -60,11 +62,17 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	private JButton stay;
 	
 	JFrame window;
+	
+	private World world;
+	
+	private Client client;
 /**
  * Creates GUIControl object and starts the main window of the GUI.
  * @param world an empty world to fill while playing
  */
-	public GUIControl(World world) {
+	public GUIControl(World world, Client client) {
+		this.world = world;
+		this.client = client;
 		tileMap = new JPanel[world.getHeight()][world.getWidth()];
 		for(int i = 0; i < world.getHeight(); i++){
 			for(int j = 0; j < world.getWidth(); j++){
@@ -143,11 +151,12 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	/**
 	 * Updates the GUI
 	 * @param health Player health
-	 * @param x Player x osition
+	 * @param x Player x position
 	 * @param y Player y position
 	 * @param area Area around and including player
 	 */
-	public void updateGui(int health, int x, int y, HashMap<String, Byte> area) {
+	//, int x, int y, HashMap<String, Byte> area
+	public void updateData(int health) {
 		hp.setValue(maxHealth - health);
 		hp.setString(health + "/" + maxHealth);
 		if (health <= 0.2 * maxHealth) {
@@ -157,6 +166,11 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		}
 		
 		this.health = health;
+		
+		int x = client.getX();
+		int y = client.getY();
+		HashMap<String, Byte> area = world.getArea(x, y);
+		
 		playerIcon.setLocation(x * 25 + 100 + 7, y * 25 + 100 + 7);
 		
 		//This works correctly
@@ -280,7 +294,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	/**
 	 * Opens a window to wait for the user to be ready
 	 */
-	void waitUntilReady() {
+	public void waitUntilReady() {
 		JOptionPane.showConfirmDialog(frame, "Are you ready?", "title", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 	}
@@ -288,7 +302,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	/**
 	 * Opens a window to let the user know that he died
 	 */
-	void youDied() {
+	public void playerDeath() {
 		JOptionPane.showConfirmDialog(frame, "YOU DIED!", "title", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 	}
@@ -296,7 +310,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	/**
 	 * Opens a window to let the user know that he won
 	 */
-	void youWin() {
+	public void playerWin() {
 		JOptionPane.showConfirmDialog(frame, "YOU WIN!", "title", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 	}
@@ -350,6 +364,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		tile.setVisible(true);
 		tileMap[y][x] = tile;
 		map.add(tile);
+		repaint();
 	}
 
 	/**

@@ -15,8 +15,11 @@ public class ConsoleControl implements ControlInterface {
 	
 	private World world;
 	
-	public ConsoleControl(World world) {
+	private Client client;
+	
+	public ConsoleControl(World world, Client client) {
 		this.world = world;
+		this.client = client;
 	}
 	
 	public String getUsername() {
@@ -33,7 +36,7 @@ public class ConsoleControl implements ControlInterface {
 		return input;
 	}
 	
-	public Integer getPort() {
+	public int getPort() {
 		System.out.print("Choose the port to connect to: ");
 		String input = scanner.next();
 		scanner.nextLine();
@@ -84,7 +87,7 @@ public class ConsoleControl implements ControlInterface {
 	/**
 	 * Wait until user presses enter
 	 */
-	void waitUntilReady() {
+	public void waitUntilReady() {
 		System.out.print("Press ENTER once you're ready to play.");
 		scanner.nextLine();
 		System.out.println("READY");
@@ -107,5 +110,17 @@ public class ConsoleControl implements ControlInterface {
 		} catch (NumberFormatException e) {
 			return 0;
 		}
+	}
+	
+	public void playerDeath() {
+		System.out.println("YOU DIED");	
+	}
+	
+	public void playerWin() {
+		System.out.println("YOU WIN");
+	}
+	
+	public void updateData(int health) {
+		System.out.println("Your new health: " + health);
 	}
 }
