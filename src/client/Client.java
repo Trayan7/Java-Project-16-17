@@ -138,10 +138,10 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 						
 						switch (nextAction) {
 						case "move":
+							nextAction = "";
 							String dir;
 							dir = control.getMoveDirection(x, y);
 							server.makeMove(id, dir);
-							nextAction = "";
 							break;
 						}
 					}
