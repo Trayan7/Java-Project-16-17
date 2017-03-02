@@ -15,12 +15,14 @@ import common.World;
 import client.ClientInterface;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
-	/**
-	 * 
-	 */
+	
 	private static final long serialVersionUID = 1L;
-
+	
+	/**
+	 * Random number generator
+	 */
 	Random rgen = new Random();
+	
 	/**
 	 * List of players in the current game
 	 */
@@ -42,10 +44,13 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	private ArrayList<UUID> roamingPlayers = new ArrayList<UUID>();
 
 	/**
-	 * 
+	 * List of player IDs the the chosen actions of the players
 	 */
 	private HashMap<UUID, String> playerActions;
 	
+	/**
+	 * List of battles going on
+	 */
 	private ArrayList<Battle> battles = new ArrayList<Battle>();
 	
 	/**
@@ -94,7 +99,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	/**
 	 * Function allowing a client to join the game
 	 * 
-	 * @param name
+	 * @param name Name of the player joining
+	 * @param client ClientInterface faced to communicate with the client via RMI
 	 */
 	public UUID join(String name, ClientInterface client) throws RemoteException {
 		System.out.print("Player " + name + " tries to join - ");
@@ -147,6 +153,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	
 	/**
 	 * Function allowing the client to say "I'm ready to start the game"
+	 * @param id ID of the player getting ready
 	 */
 	public void getReady(UUID id) throws RemoteException {
 		System.out.println(players.get(id).getName() + " added as ready");
@@ -162,6 +169,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}
 	}
 	
+	/**
+	 * Waits for everyone to be ready and then starts the game
+	 */
 	public void start() {
 		while (players.size() < 2) {
 			System.out.print(".");
@@ -224,6 +234,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		updatePlayers();
 	}
 
+	/**
+	 * Sends players their needed data and removes dead players
+	 */
 	public synchronized void updatePlayers() {
 		ArrayList<UUID> dead = new ArrayList<UUID>();
 		for (Player player : players.values()) {
@@ -247,6 +260,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}
 	}
 	
+	/**
+	 * Called by the client to register his next move on the server
+	 */
 	public synchronized void makeMove(UUID id, String dir) throws RemoteException {
 		playerActions.put(id, dir);
 		System.out.println(players.get(id).getName() + " chose " + dir);
@@ -325,6 +341,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}
 	}
 	
+	/**
+	 * Ends a battle
+	 * @param battle The battle about to end
+	 */
 	public void endBattle(Battle battle) {
 		System.out.println(roamingPlayers.size() + " roaming players.");
 		System.out.println(players.size() + " total players.");
@@ -345,6 +365,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		askForMoves();
 	}
 	
+	/**
+	 * Attacks a player, called by the client
+	 * @param target the target about to be attacked
+	 */
 	public synchronized void attack(UUID target) throws RemoteException {
 		if (players.containsKey(target)) {
 			players.get(target).setHealth(players.get(target).getHealth() - rgen.nextInt(20));
@@ -353,14 +377,25 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		updatePlayers();
 	}
 	
+	/**
+	 * Returns the width of the world
+	 * @return The width of the world
+	 */
 	public int getWorldWidth() throws RemoteException {
 		return this.world.getWidth();
 	}
 
+	/**
+	 * Returns the height of the world
+	 * @return The height of the world
+	 */
 	public int getWorldHeight() throws RemoteException {
 		return this.world.getHeight();
 	}
 	
+	/**
+	 * Notifies the roaming players that they need to make their move
+	 */
 	private synchronized void askForMoves() {
 		playerActions = new HashMap<UUID, String>();
 		for (UUID playerName : roamingPlayers) {
@@ -374,6 +409,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}
 	}
 	
+	/**
+	 * Function handling a disconnect from the client
+	 * @param dead The id of the dead player
+	 */
 	public synchronized void handleDisconnect(UUID dead) {
 		players.remove(dead);
 		roamingPlayers.remove(dead);
@@ -384,6 +423,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		//Remove player from battles
 	}
 	
+	/**
+	 * Function called by the client to verify the connection is still standing
+	 */
 	public void heartbeat() {
 		//Check connection
 	}
