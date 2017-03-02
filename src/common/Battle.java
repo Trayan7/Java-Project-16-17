@@ -43,12 +43,6 @@ public class Battle extends UnicastRemoteObject implements BattleInterface {
 	
 	public void attack(UUID target) throws RemoteException {
 		server.attack(target);
-		if (players.get(target).getHealth() <= 0) {
-			//dead
-			players.remove(target);
-			System.out.println("Removed a player");
-			server.updatePlayers();
-		}
 	}
 	
 	public int getX() {
@@ -63,14 +57,15 @@ public class Battle extends UnicastRemoteObject implements BattleInterface {
 		System.out.println("Removing a player from battle");
 		players.remove(id);
 		
-		System.out.println("Out of players");
-		for (Player player : players.values()) {
-			try {
-				player.getClient().stopBattle();
-			} catch (RemoteException e) {
-				server.handleDisconnect(player.getID());
+		if (players.size() < 2) {
+			for (Player player : players.values()) {
+				try {
+					player.getClient().stopBattle();
+				} catch (RemoteException e) {
+					server.handleDisconnect(player.getID());
+				}
 			}
+			server.endBattle(this);
 		}
-		server.endBattle(this);
 	}
 }

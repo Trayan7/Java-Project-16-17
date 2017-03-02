@@ -189,19 +189,19 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				e.printStackTrace();
 			}
 			ArrayList<UUID> dead = new ArrayList<UUID>();
-			for (Player player : players.values()) {
-				boolean connected = true;
-				try {
-					player.getClient().heartbeat();
-				} catch (RemoteException e) {
-					connected = false;
-				}
-				if (!connected) {
-					//Player connection is dead
-					dead.add(player.getID());
-				}
-			}
 			synchronized (this) {
+				for (Player player : players.values()) {
+					boolean connected = true;
+					try {
+						player.getClient().heartbeat();
+					} catch (RemoteException e) {
+						connected = false;
+					}
+					if (!connected) {
+						//Player connection is dead
+						dead.add(player.getID());
+					}
+				}
 				for (UUID deadManWalking: dead) {
 					handleDisconnect(deadManWalking);
 				}
@@ -239,7 +239,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}
 		
 		for (UUID id : dead) {
-			for (Battle battle: battles) {
+			ArrayList<Battle> battlesCopy = new ArrayList<>(battles);
+			for (Battle battle: battlesCopy) {
 				battle.removePlayer(id);
 			}
 			players.remove(id);
@@ -297,6 +298,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 							for (Player newBattler : spots[i][j]) {
 								//Add all players battling
 								battle.addPlayer(newBattler);
+								roamingPlayers.remove(newBattler.getID());
 							}
 						}
 					}
@@ -340,13 +342,17 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		System.out.println(roamingPlayers.size() + " roaming players.");
 		System.out.println(players.size() + " total players.");
 		updatePlayers();
+		askForMoves();
 	}
 	
-	public void attack(UUID target) throws RemoteException {
-		players.get(target).setHealth(players.get(target).getHealth() - rgen.nextInt(20));
+	public synchronized void attack(UUID target) throws RemoteException {
+		if (players.containsKey(target)) {
+			players.get(target).setHealth(players.get(target).getHealth() - rgen.nextInt(20));
+		}
+		
 		updatePlayers();
 	}
-
+	
 	public int getWorldWidth() throws RemoteException {
 		return this.world.getWidth();
 	}

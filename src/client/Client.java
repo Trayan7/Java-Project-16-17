@@ -109,6 +109,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 							}
 							if (!connected) {
 								//Server connection is dead
+								System.out.println("Disconnect by heartbeat");
 								handleDisconnect();
 							}
 				    	}
@@ -124,7 +125,6 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 				
 				//While we're in the game
 				while (health > 0) {
-					System.out.print(".");
 					if (this.battle != null) {
 						//Gonna fight
 						ArrayList<Player> targets = battle.getPlayers();
@@ -174,6 +174,8 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 					}
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
+				System.out.println("Disconnect by mainloop");
 				handleDisconnect();
 			}
 		}
