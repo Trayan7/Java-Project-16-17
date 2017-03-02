@@ -382,7 +382,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 				tileMap[i][j] = null;
 			}
 		}
-		int n = JOptionPane.showConfirmDialog(frame, "Are you ready?", "title", JOptionPane.DEFAULT_OPTION,
+		int n = JOptionPane.showConfirmDialog(frame, "Are you ready?", "Ready?", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 		if (n == JOptionPane.CLOSED_OPTION) {
 			waitUntilReady();
@@ -393,7 +393,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * Opens a window to let the user know that he died
 	 */
 	public void playerDeath() {
-		JOptionPane.showConfirmDialog(frame, "YOU DIED!", "title", JOptionPane.DEFAULT_OPTION,
+		JOptionPane.showConfirmDialog(frame, "YOU DIED!", "Welp", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 	}
 
@@ -401,7 +401,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * Opens a window to let the user know that he won
 	 */
 	public void playerWin() {
-		JOptionPane.showConfirmDialog(frame, "YOU WIN!", "title", JOptionPane.DEFAULT_OPTION,
+		JOptionPane.showConfirmDialog(frame, "YOU WIN!", "Yay!", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 	}
 
@@ -516,6 +516,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	public int getTarget(ArrayList<Player> targets) {
 		System.out.println("Getting target");
 		JFrame battle = new JFrame("Battle");
+		//battle.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		battle.addWindowListener(new WindowAdapter() {
 		    @Override
 		    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
@@ -578,7 +579,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	}
 	
 	public void playerDisconnect() {
-		JOptionPane.showConfirmDialog(frame, "Disconnected from server.", "title", JOptionPane.DEFAULT_OPTION,
+		JOptionPane.showConfirmDialog(frame, "Disconnected from server.", "Disconnect", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
 	}
 }

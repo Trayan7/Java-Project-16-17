@@ -201,7 +201,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	 */
 	public void askForMove() throws RemoteException {
 		lock.lock();
-		try{
+		try {
 			this.nextAction = "move";
 			cond.signal();
 		} finally {
@@ -210,7 +210,13 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	}
 	
 	public void startBattle(BattleInterface battle) throws RemoteException {
-		this.battle = battle;
+		lock.lock();
+		try {
+			this.battle = battle;
+			cond.signal();
+		} finally {
+			lock.unlock();
+		}
 	}
 	
 	public void stopBattle() throws RemoteException {

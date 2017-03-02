@@ -201,8 +201,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 					dead.add(player.getID());
 				}
 			}
-			for (UUID deadManWalking: dead) {
-				handleDisconnect(deadManWalking);
+			synchronized (this) {
+				for (UUID deadManWalking: dead) {
+					handleDisconnect(deadManWalking);
+				}
 			}
 		}
 		
