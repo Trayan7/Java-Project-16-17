@@ -2,6 +2,7 @@ package client;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -43,7 +44,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	static int maxHealth = 100;
 	private String uName = "not updated, yet";
 	private JLabel name = new JLabel(uName);
-	private JScrollPane map;
+	private static JScrollPane map;
 	private int target = 0;
 	private JPanel playerIcon;
 
@@ -61,9 +62,9 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	private JButton south;
 	private JButton stay;
 	
-	JFrame window;
+	static JFrame window;
 	
-	private World world;
+	private static World world;
 	
 	private Client client;
 /**
@@ -86,7 +87,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * Starts the main window of the GUI
 	 * @return JFrame of the main window of the GUI
 	 */
-	public JFrame createGUI() {
+	public  JFrame createGUI() {
 		JFrame window = new JFrame(title);
 		window.setVisible(true);
 		window.setSize(width, height);
@@ -143,6 +144,19 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		playerIcon.setLayout(null);
 		map.add(playerIcon);
 		playerIcon.setVisible(true);
+		
+		world = new World("empty");
+		
+//	    EventQueue.invokeLater(new Runnable() {
+//	        public void run() {
+//	            try {
+//	                DrawMap test = new DrawMap();
+//	                test.frame.setVisible(true);
+//	            } catch (Exception e) {
+//	                e.printStackTrace();
+//	            }
+//	        }
+//	    });
 
 		return window;
 
@@ -175,19 +189,19 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		
 		//This works correctly
 		if (area.containsKey("North") && tileMap[y - 1][x] == null) {
-			createTile(x, y - 1, area.get("North"));
+			world.setBiome(x, y - 1, area.get("North"));
 		}
 		if (area.containsKey("East") && tileMap[y][x + 1] == null) {
-			createTile(x + 1, y, area.get("East"));			
+			world.setBiome(x + 1, y, area.get("East"));			
 		}
 		if (area.containsKey("West") && tileMap[y][x - 1] == null) {
-			createTile(x - 1, y, area.get("West"));			
+			world.setBiome(x - 1, y, area.get("West"));			
 		}
 		if (area.containsKey("South") && tileMap[y + 1][x] == null) {
-			createTile(x, y + 1, area.get("South"));			
+			world.setBiome(x, y + 1, area.get("South"));			
 		}
 		if (area.containsKey("Stay") && tileMap[y][x] == null){
-			createTile(x, y, area.get("Stay"));			
+			world.setBiome(x, y, area.get("Stay"));			
 		}
 		repaint();
 	}
@@ -331,41 +345,41 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		return answer;
 	}
 
-/**
- * Creates a new tile at a given position in map with the background color defined by the biome
- * @param x X position of tile
- * @param y Y position of tile
- * @param n Biome of the tile
- */
-	public void createTile(int x, int y, Byte n) {
-		JPanel tile = new JPanel();
-		switch (n) {
-		case 0:
-			tile.setBackground(cEmpty);
-			break;
-		case 1:
-			tile.setBackground(cForest);
-			break;
-		case 2:
-			tile.setBackground(cPlains);
-			break;
-		case 3:
-			tile.setBackground(cMountain);
-			break;
-		case 4:
-			tile.setBackground(cSwamp);
-			break;
-		case 5:
-			tile.setBackground(cIsland);
-			break;
-		}
-		tile.setBounds((x * 25) + 100, (y * 25) + 100, 25, 25);
-		tile.setLayout(null);
-		tile.setVisible(true);
-		tileMap[y][x] = tile;
-		map.add(tile);
-		repaint();
-	}
+///**
+// * Creates a new tile at a given position in map with the background color defined by the biome
+// * @param x X position of tile
+// * @param y Y position of tile
+// * @param n Biome of the tile
+// */
+//	public void createTile(int x, int y, Byte n) {
+//		JPanel tile = new JPanel();
+//		switch (n) {
+//		case 0:
+//			tile.setBackground(cEmpty);
+//			break;
+//		case 1:
+//			tile.setBackground(cForest);
+//			break;
+//		case 2:
+//			tile.setBackground(cPlains);
+//			break;
+//		case 3:
+//			tile.setBackground(cMountain);
+//			break;
+//		case 4:
+//			tile.setBackground(cSwamp);
+//			break;
+//		case 5:
+//			tile.setBackground(cIsland);
+//			break;
+//		}
+//		tile.setBounds((x * 25) + 100, (y * 25) + 100, 25, 25);
+//		tile.setLayout(null);
+//		tile.setVisible(true);
+//		tileMap[y][x] = tile;
+//		map.add(tile);
+//		repaint();
+//	}
 
 	/**
 	 * Action Events of the direction buttons
@@ -432,4 +446,12 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		battle.dispatchEvent(new WindowEvent(battle, WindowEvent.WINDOW_CLOSING));
 		return temp;
 	}
+
+public static World getWorld(){
+	return world;
+}
+
+public static JScrollPane getScrollPane(){
+	return map;
+}
 }
