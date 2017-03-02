@@ -1,8 +1,6 @@
 package client;
 
 import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -24,11 +22,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 
 	/*
 	 * TODO
-	 * Come up with good fix for busy wait
 	 * create text field for status of game e.g. choose a direction
-	 * Make the battle window close itself if the target is invalid
-	 * make windows only close when appropriate
-	 * check whether or not the scrolling works
 	 */
 	
 	private JPanel[][] tileMap;
@@ -47,7 +41,6 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	private int target = 0;
 	private JPanel playerIcon;
 
-	private Color cEmpty = Color.black;
 	private Color cForest = new Color(111, 232, 86);
 	private Color cPlains = new Color(177, 255, 95);
 	private Color cMountain = new Color(102, 88, 69);
@@ -86,6 +79,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * @return JFrame of the main window of the GUI
 	 */
 	public  JFrame createGUI() {
+		//start the main window
 		window = new JFrame(title);
 		window.setVisible(true);
 		window.setSize(width, height);
@@ -93,6 +87,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		window.setLayout(null);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		//add direction buttons
 		north = new JButton("N");
 		north.addActionListener(this);
 		north.setVisible(true);
@@ -118,25 +113,23 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		window.add(west);
 		window.add(south);
 		window.add(stay);
-
+		
+		//add username and health bar
 		name = new JLabel(uName);
 		window.add(name);
 		name.setBounds(625, 225, 150, 25);
 		name.setVisible(true);
-
 		hp = hpBar(health);
 		window.add(hp);
 
+		//add world map
 		map = new JScrollPane();
 		window.add(map);
 		map.setBounds(0, 0, 602, 572);
 		map.setLayout(null);
 		map.setVisible(true);
-//		map.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-//		map.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-//		map.getHorizontalScrollBar().setPreferredSize(new Dimension(0, 15));
-//		map.getVerticalScrollBar().setPreferredSize(new Dimension(15, 0));
 		
+		//add player icon
 		playerIcon = new JPanel();
 		playerIcon.setBounds(0,0, 9, 9);
 		playerIcon.setBackground(Color.red);
@@ -154,7 +147,6 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * @param y Player y position
 	 * @param area Area around and including player
 	 */
-	//, int x, int y, HashMap<String, Byte> area
 	public void updateData(int health) {
 		hp.setValue(maxHealth - health);
 		hp.setString(health + "/" + maxHealth);
@@ -213,6 +205,23 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		uName = JOptionPane.showInputDialog(frame, "Enter username: ", title, JOptionPane.QUESTION_MESSAGE);
 		name.setText(uName);
 		repaint();
+		if(uName == null) {
+			getUsernameClosed();
+		}
+		return uName;
+	}
+	
+	/**
+	 * Opens a window to ask for user name.
+	 * @return The chosen name
+	 */
+	public String getUsernameClosed() {
+		uName = JOptionPane.showInputDialog(frame, "Do not close this window and choose a name!", title, JOptionPane.WARNING_MESSAGE);
+		name.setText(uName);
+		repaint();
+		if(uName == null) {
+			getUsernameClosed();
+		}
 		return uName;
 	}
 	
@@ -222,6 +231,9 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 */
 	public String getUsernameFailed() {
 		uName = JOptionPane.showInputDialog(frame, "That username is already taken: ", title, JOptionPane.ERROR_MESSAGE);
+		if(uName == null) {
+			return getUsernameClosed();
+		}
 		return uName;
 	}
 
@@ -231,11 +243,26 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 */
 	public String getHost() {
 		String host = JOptionPane.showInputDialog(frame, "Enter server address: ", title, JOptionPane.QUESTION_MESSAGE);
-		if (host.length() == 0) {
+		if (host == null) {
+			return getHostClosed();
+		} else if (host.length() == 0) {
 			return "localhost";
-		} else {
+		}
 			return host;
 		}
+
+/**
+ * Opens a window to ask for server address.
+ * @return The chosen address
+ */
+public String getHostClosed() {
+	String host = JOptionPane.showInputDialog(frame, "Do not close this window and enter a host!", title, JOptionPane.WARNING_MESSAGE);
+	if (host == null) {
+		return getHostClosed();
+	} else if (host.length() == 0) {
+		return "localhost";
+	}
+		return host;
 	}
 
 	/**
@@ -244,7 +271,32 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 */
 	public int getPort() {
 		String sPort = JOptionPane.showInputDialog(frame, "Enter server port: ", title, JOptionPane.QUESTION_MESSAGE);
-		if (sPort.length() == 0) {
+		if (sPort == null) {
+			return getPortClosed();
+		} else if (sPort.length() == 0) {
+			return 1099;
+		}
+		try {
+			int port = Integer.parseInt(sPort);
+			if (port <= 0 || port > 65536) {
+				return getPortFailed();
+			} else {
+				return Integer.parseInt(sPort);
+			}
+		} catch (NumberFormatException exception) {
+			return getPortFailed();
+		}
+	}
+	
+	/**
+	 * Opens a window to ask for server port
+	 * @return The chosen port
+	 */
+	public int getPortClosed() {
+		String sPort = JOptionPane.showInputDialog(frame, "Do not close this window and enter a port!", title, JOptionPane.WARNING_MESSAGE);
+		if (sPort == null) {
+			return getPortClosed();
+		} else if (sPort.length() == 0) {
 			return 1099;
 		}
 		try {
@@ -266,7 +318,9 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	public int getPortFailed() {
 		String sPort = JOptionPane.showInputDialog(frame, "That wasn't a valid port: ", title,
 				JOptionPane.ERROR_MESSAGE);
-		if (sPort.length() == 0) {
+		if (sPort == null) {
+			return getPortClosed();
+		} else if (sPort.length() == 0) {
 			return 1099;
 		}
 		try {
@@ -285,8 +339,11 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * Opens a window to wait for the user to be ready
 	 */
 	public void waitUntilReady() {
-		JOptionPane.showConfirmDialog(frame, "Are you ready?", "title", JOptionPane.DEFAULT_OPTION,
+		int n = JOptionPane.showConfirmDialog(frame, "Are you ready?", "title", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
+		if(n == JOptionPane.CLOSED_OPTION) {
+			waitUntilReady();
+		}
 	}
 
 	/**
@@ -314,7 +371,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	public String getMoveDirection(int x, int y) {
 		//(Busy waiting, but if we use wait() we need a lock)
 		while(!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West") && !dir.equals("Stay")) {
-			System.out.println("BUSY WAIT");
+			System.out.print("");
 		}
 		String answer = dir;
 		dir = "";
@@ -344,7 +401,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		Byte n = world.getBiome(x, y);
 		switch (n) {
 		case 0:
-			System.out.print("empty");
+			System.out.print("");
 			break;
 		case 1:
 			tile.setBackground(cForest);
@@ -373,19 +430,14 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	public void actionPerformed(ActionEvent e) {
 		if (e.getSource().equals(north)) {
 			dir = "North";
-			System.out.println("dir = " + dir);
 		} else if (e.getSource().equals(east)) {
 			dir = "East";
-			System.out.println("dir = " + dir);
 		} else if (e.getSource().equals(west)) {
 			dir = "West";
-			System.out.println("dir = " + dir);
 		} else if (e.getSource().equals(south)) {
 			dir = "South";
-			System.out.println("dir = " + dir);
 		} else if (e.getSource().equals(stay)) {
 			dir = "Stay";
-			System.out.println("dir = " + dir);
 		}
 	}
 
