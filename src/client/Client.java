@@ -33,7 +33,7 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	
 	String nextAction = "";
 	
-	World world = new World("empty");
+	World world;
 	
 	private BattleInterface battle;
 	
@@ -82,9 +82,12 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 				id = server.join(username, this);
 			}
 			
+			world = new World("empty", server.getWorldWidth(), server.getWorldHeight());
+			
 			control.waitUntilReady();
 			//Ready
 			server.getReady(id);
+			
 			
 			//While we're in the game
 			//(Busy waiting, but if we use wait() we need a lock)
@@ -147,6 +150,9 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		control.updateData(health);
 		
 		if (health <= 0) {
+			control.playerDeath();
+			System.exit(0);
+		} else if (control.disconnect() == true) {
 			control.playerDeath();
 			System.exit(0);
 		}

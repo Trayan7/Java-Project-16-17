@@ -21,10 +21,9 @@ import common.World;
 public class GUIControl extends JFrame implements ControlInterface, ActionListener {
 
 	/*
-	 * TODO
-	 * create text field for status of game e.g. choose a direction
+	 * TODO create text field for status of game e.g. choose a direction
 	 */
-	
+
 	private JPanel[][] tileMap;
 	private static final long serialVersionUID = 1L;
 	private String dir = "";
@@ -52,42 +51,44 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	private JButton west;
 	private JButton south;
 	private JButton stay;
-	
+	private JButton close;
+
 	private JFrame window;
-	
+
 	private World world;
-	
+
 	private Client client;
-/**
- * Creates GUIControl object and starts the main window of the GUI.
- * @param world an empty world to fill while playing
- */
+	private boolean disconnect = false;
+
+	/**
+	 * Creates GUIControl object and starts the main window of the GUI.
+	 * 
+	 * @param world
+	 *            an empty world to fill while playing
+	 */
 	public GUIControl(Client client) {
 		this.client = client;
-		this.world = client.getWorld();
-		tileMap = new JPanel[world.getHeight()][world.getWidth()];
-		for (int i = 0; i < world.getHeight(); i++){
-			for (int j = 0; j < world.getWidth(); j++){
-				tileMap[i][j] = null;
-			}
-		}
 		createGUI();
 	}
 
 	/**
 	 * Starts the main window of the GUI
+	 * 
 	 * @return JFrame of the main window of the GUI
 	 */
-	public  JFrame createGUI() {
-		//start the main window
+	public JFrame createGUI() {
+		// start the main window
 		window = new JFrame(title);
 		window.setVisible(true);
 		window.setSize(width, height);
 		window.setResizable(false);
 		window.setLayout(null);
-		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		//centering
+		window.setLocationRelativeTo(null);
+		window.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+//		window.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
-		//add direction buttons
+		// add direction buttons
 		north = new JButton("N");
 		north.addActionListener(this);
 		north.setVisible(true);
@@ -114,7 +115,14 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		window.add(south);
 		window.add(stay);
 		
-		//add username and health bar
+		//add close button
+		close = new JButton("Exit");
+		close.addActionListener(this);
+		close.setVisible(true);
+		close.setBounds(650, 350, 100, 25);
+		window.add(close);
+		
+		// add username and health bar
 		name = new JLabel(uName);
 		window.add(name);
 		name.setBounds(625, 225, 150, 25);
@@ -122,30 +130,37 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		hp = hpBar(health);
 		window.add(hp);
 
-		//add world map
+		// add world map
 		map = new JScrollPane();
 		window.add(map);
 		map.setBounds(0, 0, 602, 572);
 		map.setLayout(null);
 		map.setVisible(true);
-		
-		//add player icon
+		map.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+		map.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+		// add player icon
 		playerIcon = new JPanel();
-		playerIcon.setBounds(0,0, 9, 9);
+		playerIcon.setBounds(0, 0, 9, 9);
 		playerIcon.setBackground(Color.red);
 		playerIcon.setLayout(null);
 		map.add(playerIcon);
 		playerIcon.setVisible(true);
-		
+
 		return window;
 	}
 
 	/**
 	 * Updates the GUI
-	 * @param health Player health
-	 * @param x Player x position
-	 * @param y Player y position
-	 * @param area Area around and including player
+	 * 
+	 * @param health
+	 *            Player health
+	 * @param x
+	 *            Player x position
+	 * @param y
+	 *            Player y position
+	 * @param area
+	 *            Area around and including player
 	 */
 	public void updateData(int health) {
 		hp.setValue(maxHealth - health);
@@ -155,12 +170,12 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		} else {
 			hp.setBackground(Color.GREEN);
 		}
-		
+
 		this.health = health;
-		
+
 		int x = client.getX();
 		int y = client.getY();
-		
+
 		int worldHeight = world.getHeight();
 		int worldWidth = world.getWidth();
 		for (int i = 0; i < worldWidth; i++) {
@@ -168,16 +183,18 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 				createTile(i, j);
 			}
 		}
-		
+
 		playerIcon.setLocation(x * 25 + 100 + 7, y * 25 + 100 + 7);
-		
+
 		validate();
 		repaint();
 	}
-	
+
 	/**
 	 * Creates a health bar for the player
-	 * @param health Current health
+	 * 
+	 * @param health
+	 *            Current health
 	 * @return JProgressBar as health bar
 	 */
 	public JProgressBar hpBar(int health) {
@@ -187,7 +204,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		hp.setValue(maxHealth - health);
 		hp.setMaximum(maxHealth);
 		hp.setVisible(true);
-		//Since we have no Player list
+		// Since we have no Player list
 		hp.setBounds(625, 250, 150, 50);
 		if (health <= 0.2 * maxHealth) {
 			hp.setBackground(Color.RED);
@@ -199,39 +216,44 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 
 	/**
 	 * Opens a window to ask for user name.
+	 * 
 	 * @return The chosen name
 	 */
 	public String getUsername() {
 		uName = JOptionPane.showInputDialog(frame, "Enter username: ", title, JOptionPane.QUESTION_MESSAGE);
 		name.setText(uName);
 		repaint();
-		if(uName == null) {
+		if (uName == null) {
 			getUsernameClosed();
 		}
 		return uName;
 	}
-	
+
 	/**
 	 * Opens a window to ask for user name.
+	 * 
 	 * @return The chosen name
 	 */
 	public String getUsernameClosed() {
-		uName = JOptionPane.showInputDialog(frame, "Do not close this window and choose a name!", title, JOptionPane.WARNING_MESSAGE);
+		uName = JOptionPane.showInputDialog(frame, "Do not close this window and choose a name!", title,
+				JOptionPane.WARNING_MESSAGE);
 		name.setText(uName);
 		repaint();
-		if(uName == null) {
+		if (uName == null) {
 			getUsernameClosed();
 		}
 		return uName;
 	}
-	
+
 	/**
 	 * Opens a window to ask for a different user name
+	 * 
 	 * @return
 	 */
 	public String getUsernameFailed() {
-		uName = JOptionPane.showInputDialog(frame, "That username is already taken: ", title, JOptionPane.ERROR_MESSAGE);
-		if(uName == null) {
+		uName = JOptionPane.showInputDialog(frame, "That username is already taken: ", title,
+				JOptionPane.ERROR_MESSAGE);
+		if (uName == null) {
 			return getUsernameClosed();
 		}
 		return uName;
@@ -239,6 +261,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 
 	/**
 	 * Opens a window to ask for server address.
+	 * 
 	 * @return The chosen address
 	 */
 	public String getHost() {
@@ -248,25 +271,28 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		} else if (host.length() == 0) {
 			return "localhost";
 		}
-			return host;
-		}
-
-/**
- * Opens a window to ask for server address.
- * @return The chosen address
- */
-public String getHostClosed() {
-	String host = JOptionPane.showInputDialog(frame, "Do not close this window and enter a host!", title, JOptionPane.WARNING_MESSAGE);
-	if (host == null) {
-		return getHostClosed();
-	} else if (host.length() == 0) {
-		return "localhost";
+		return host;
 	}
+
+	/**
+	 * Opens a window to ask for server address.
+	 * 
+	 * @return The chosen address
+	 */
+	public String getHostClosed() {
+		String host = JOptionPane.showInputDialog(frame, "Do not close this window and enter a host!", title,
+				JOptionPane.WARNING_MESSAGE);
+		if (host == null) {
+			return getHostClosed();
+		} else if (host.length() == 0) {
+			return "localhost";
+		}
 		return host;
 	}
 
 	/**
 	 * Opens a window to ask for server port
+	 * 
 	 * @return The chosen port
 	 */
 	public int getPort() {
@@ -287,13 +313,15 @@ public String getHostClosed() {
 			return getPortFailed();
 		}
 	}
-	
+
 	/**
 	 * Opens a window to ask for server port
+	 * 
 	 * @return The chosen port
 	 */
 	public int getPortClosed() {
-		String sPort = JOptionPane.showInputDialog(frame, "Do not close this window and enter a port!", title, JOptionPane.WARNING_MESSAGE);
+		String sPort = JOptionPane.showInputDialog(frame, "Do not close this window and enter a port!", title,
+				JOptionPane.WARNING_MESSAGE);
 		if (sPort == null) {
 			return getPortClosed();
 		} else if (sPort.length() == 0) {
@@ -313,6 +341,7 @@ public String getHostClosed() {
 
 	/**
 	 * Opens a window to ask for another server port
+	 * 
 	 * @return The chosen port
 	 */
 	public int getPortFailed() {
@@ -339,9 +368,16 @@ public String getHostClosed() {
 	 * Opens a window to wait for the user to be ready
 	 */
 	public void waitUntilReady() {
+		this.world = client.getWorld();
+		tileMap = new JPanel[world.getHeight()][world.getWidth()];
+		for (int i = 0; i < world.getHeight(); i++) {
+			for (int j = 0; j < world.getWidth(); j++) {
+				tileMap[i][j] = null;
+			}
+		}
 		int n = JOptionPane.showConfirmDialog(frame, "Are you ready?", "title", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
-		if(n == JOptionPane.CLOSED_OPTION) {
+		if (n == JOptionPane.CLOSED_OPTION) {
 			waitUntilReady();
 		}
 	}
@@ -364,13 +400,17 @@ public String getHostClosed() {
 
 	/**
 	 * Returns the last direction button the user clicked
-	 * @param x irrelevant
-	 * @param y irrelevant
+	 * 
+	 * @param x
+	 *            irrelevant
+	 * @param y
+	 *            irrelevant
 	 * @return String of direction
 	 */
 	public String getMoveDirection(int x, int y) {
-		//(Busy waiting, but if we use wait() we need a lock)
-		while(!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West") && !dir.equals("Stay")) {
+		// (Busy waiting, but if we use wait() we need a lock)
+		while (!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West")
+				&& !dir.equals("Stay")) {
 			System.out.print("");
 		}
 		String answer = dir;
@@ -378,12 +418,17 @@ public String getHostClosed() {
 		return answer;
 	}
 
-/**
- * Creates a new tile at a given position in map with the background color defined by the biome
- * @param x X position of tile
- * @param y Y position of tile
- * @param n Biome of the tile
- */
+	/**
+	 * Creates a new tile at a given position in map with the background color
+	 * defined by the biome
+	 * 
+	 * @param x
+	 *            X position of tile
+	 * @param y
+	 *            Y position of tile
+	 * @param n
+	 *            Biome of the tile
+	 */
 	public void createTile(int x, int y) {
 		JPanel tile;
 		if (tileMap[y][x] == null) {
@@ -392,12 +437,12 @@ public String getHostClosed() {
 			tile.setVisible(true);
 			tile.setBounds((x * 25) + 100, (y * 25) + 100, 25, 25);
 			tile.setLayout(null);
-			
+
 			tileMap[y][x] = tile;
 		} else {
 			tile = tileMap[y][x];
 		}
-		
+
 		Byte n = world.getBiome(x, y);
 		switch (n) {
 		case 0:
@@ -419,7 +464,7 @@ public String getHostClosed() {
 			tile.setBackground(cIsland);
 			break;
 		}
-		
+
 		validate();
 		repaint();
 	}
@@ -438,16 +483,24 @@ public String getHostClosed() {
 			dir = "South";
 		} else if (e.getSource().equals(stay)) {
 			dir = "Stay";
+		} else if (e.getSource().equals(close)) {
+			disconnect = true;
 		}
 	}
 
 	/**
-	 * Opens a window of all possible targets in a scrambled order and lets the user click any of those targets
-	 * @param targets ArrayList of the players that are in the battle
+	 * Opens a window of all possible targets in a scrambled order and lets the
+	 * user click any of those targets
+	 * 
+	 * @param targets
+	 *            ArrayList of the players that are in the battle
 	 * @return Returns the index + 1 of the chosen target
 	 */
 	public int getTarget(ArrayList<Player> targets) {
 		JFrame battle = new JFrame("Battle");
+		battle.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+		//centering
+		battle.setLocationRelativeTo(null);
 		battle.setLayout(null);
 		battle.setSize(250, targets.size() * 25 + 75);
 		battle.setVisible(true);
@@ -482,6 +535,12 @@ public String getHostClosed() {
 		int temp = target;
 		target = 0;
 		battle.dispatchEvent(new WindowEvent(battle, WindowEvent.WINDOW_CLOSING));
+		dispose();
 		return temp;
+	}
+
+	@Override
+	public boolean disconnect() {
+		return disconnect ;
 	}
 }
