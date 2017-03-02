@@ -12,4 +12,5 @@ public interface ClientInterface extends Remote {
 	public void startBattle(BattleInterface battle) throws RemoteException;
 	public void stopBattle() throws RemoteException;
 	public void winGame() throws RemoteException;
+	public void heartbeat() throws RemoteException;
 }

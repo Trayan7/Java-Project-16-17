@@ -6,6 +6,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -58,6 +60,11 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	private World world;
 
 	private Client client;
+	
+	ReentrantLock lock = new ReentrantLock();
+	Condition cond = lock.newCondition();
+	ReentrantLock battleLock = new ReentrantLock();
+	Condition battleCond = battleLock.newCondition();
 
 	/**
 	 * Creates GUIControl object and starts the main window of the GUI.
@@ -84,8 +91,8 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		window.setLayout(null);
 		//centering
 		window.setLocationRelativeTo(null);
-		window.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-//		window.setDefaultCloseOperation(EXIT_ON_CLOSE);
+//		window.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+		window.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
 		// add direction buttons
 		north = new JButton("N");
@@ -114,12 +121,12 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		window.add(south);
 		window.add(stay);
 		
-		//add close button
-		close = new JButton("Exit");
-		close.addActionListener(this);
-		close.setVisible(true);
-		close.setBounds(650, 350, 100, 25);
-		window.add(close);
+//		//add close button
+//		close = new JButton("Exit");
+//		close.addActionListener(this);
+//		close.setVisible(true);
+//		close.setBounds(650, 350, 100, 25);
+//		window.add(close);
 		
 		// add username and health bar
 		name = new JLabel(uName);
@@ -405,17 +412,23 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * @param y
 	 *            irrelevant
 	 * @return String of direction
+	 * @throws InterruptedException 
 	 */
-	public String getMoveDirection(int x, int y) {
-		// (Busy waiting, but if we use wait() we need a lock)
-		while (!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West")
-				&& !dir.equals("Stay")) {
-			System.out.print("");
+	public String getMoveDirection(int x, int y) throws InterruptedException {
+		lock.lock();
+		try{
+			if (!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West")
+					&& !dir.equals("Stay")) {
+				cond.await();
+			}		
+		} finally {
+			lock.unlock();			
 		}
-		String answer = dir;
-		dir = "";
-		return answer;
-	}
+			String answer = dir;
+			dir = "";
+			return answer;
+		}			
+//		}
 
 	/**
 	 * Creates a new tile at a given position in map with the background color
@@ -472,18 +485,22 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * Action Events of the direction buttons
 	 */
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource().equals(north)) {
-			dir = "North";
-		} else if (e.getSource().equals(east)) {
-			dir = "East";
-		} else if (e.getSource().equals(west)) {
-			dir = "West";
-		} else if (e.getSource().equals(south)) {
-			dir = "South";
-		} else if (e.getSource().equals(stay)) {
-			dir = "Stay";
-		} else if (e.getSource().equals(close)) {
-			client.disconnect();
+		lock.lock();
+		try{
+			if (e.getSource().equals(north)) {
+				dir = "North";
+			} else if (e.getSource().equals(east)) {
+				dir = "East";
+			} else if (e.getSource().equals(west)) {
+				dir = "West";
+			} else if (e.getSource().equals(south)) {
+				dir = "South";
+			} else if (e.getSource().equals(stay)) {
+				dir = "Stay";
+			}
+			cond.signal();			
+		} finally {
+			lock.unlock();			
 		}
 	}
 
@@ -520,15 +537,26 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 			att.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					target = id;
+					System.out.println("Pressed target button");
+					battleLock.lock();
+					try{
+						target = id;
+						battleCond.signal();
+					} finally {
+						battleLock.unlock();
+					}
 				}
 			});
 		}
 		while (target == 0) {
+			System.out.println("Invalid Target or not chosen");
+			battleLock.lock();
 			try {
-				Thread.sleep(100);
+				battleCond.await();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
+			} finally {
+				battleLock.unlock();
 			}
 		}
 		int temp = target;

@@ -17,7 +17,7 @@ public interface ControlInterface {
 
 	int getTarget(ArrayList<Player> targets);
 
-	String getMoveDirection(int x, int y);
+	String getMoveDirection(int x, int y) throws InterruptedException;
 
 	void playerDeath();
 
