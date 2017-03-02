@@ -1,6 +1,1 @@
 Kommentare
-Disable close buttons on input windows
-System.exit(0) on main window close button press
-Fix rendering
-Disconnect proof
-Busy Waits (?)
