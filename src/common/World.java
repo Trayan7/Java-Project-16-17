@@ -36,6 +36,12 @@ public class World {
 		}
 	}
 	
+	/**
+	 * Generates an empty map of a given size
+	 * @param columns	Width of columns of the map
+	 * @param rows	Height or rows of the map
+	 * @return
+	 */
 	private Byte[][] emptyMap(int columns, int rows){
 		this.rows = rows;
 		this.columns = columns;
@@ -78,11 +84,11 @@ public class World {
 	}
 	
 	/**
-	 * Creates a new random map.
+	 * Creates a map with randomly set terrain
 	 * 
 	 * @rows The number of rows the map should have.
 	 * @columns The number of columns the map should have.
-	 * @return the generated map
+	 * @return The generated map
 	 */
 	private Byte[][] randomMap(int columns, int rows){
 		this.columns = columns;
@@ -133,27 +139,45 @@ public class World {
 		return null;
 	}
 	
+	/**
+	 * Gets the height or the rows of the map
+	 * @return The number of rows of the map
+	 */
 	public int getHeight() {
 		return this.rows;
 	}
 	
+	/**
+	 * Gets the width or the columns of the map
+	 * @return The number of columns of the map
+	 */
 	public int getWidth() {
 		return this.columns;
 	}
 	
+	/**
+	 * Gets a two-dimensional representation of the terrain of the map
+	 * @return A two-dimensional array of bytes representing tiles
+	 */
 	public Byte[][] getMap() {
 		return this.Map;
 	}
 	
+	/**
+	 * Sets the biome of one spot of the map.
+	 * @param column	The column of the requested tile
+	 * @param row		The row of the requested tile
+	 * @param n			The biome code of the tile
+	 */
 	public void setBiome(int column, int row, Byte n) {
 		Map[column][row] = n;
 	}
 	
 	/**
 	 * Returns the area around a single spot on the map
-	 * @param row
-	 * @param column
-	 * @return
+	 * @param row		The row of the spot
+	 * @param column	The column of the spot
+	 * @return	A Hash Map of biome of the chosen spot and its adjacent tiles
 	 */
 	public HashMap<String, Byte> getArea(int column, int row) {
 		HashMap<String, Byte> area = new HashMap<String, Byte>();
