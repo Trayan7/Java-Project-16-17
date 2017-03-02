@@ -20,11 +20,11 @@ public class World {
 	 * 
 	 * @worldName The path of the map you want to load. Leave empty for a random map.
 	 */
-	public World(String worldName) {
+	public World(String worldName, int columns, int rows) {
 		if (worldName.equals("random")){
-			Map = randomMap(RANDOM_SIZE, RANDOM_SIZE);
+			Map = randomMap(columns, rows);
 		} else if (worldName.equals("empty")) {
-			Map = emptyMap(RANDOM_SIZE, RANDOM_SIZE);
+			Map = emptyMap(columns, rows);
 		} else {
 			try {
 				Map = loadFromFile(worldName);
