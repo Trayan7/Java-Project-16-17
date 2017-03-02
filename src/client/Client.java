@@ -33,7 +33,6 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	
 	String nextAction = "";
 	
-	//TODO Ask Server for world
 	World world = new World("empty");
 	
 	private BattleInterface battle;
@@ -60,9 +59,9 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		String host;
 		int port;
 		if(type.equals("ConsoleControl")) {
-			control = new ConsoleControl(world, this);
+			control = new ConsoleControl(this);
 		} else {
-			control = new GUIControl(world, this);
+			control = new GUIControl(this);
 		}
 		
 		host = control.getHost();
@@ -139,12 +138,13 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		this.health = health;
 		this.x = x;
 		this.y = y;
-		control.updateData(health);
 		if (area.containsKey("North")) world.setBiome(this.x, this.y - 1, area.get("North"));
 		if (area.containsKey("East")) world.setBiome(this.x + 1, this.y, area.get("East"));
 		if (area.containsKey("West")) world.setBiome(this.x - 1, this.y, area.get("West"));
 		if (area.containsKey("South")) world.setBiome(this.x, this.y + 1, area.get("South"));
 		if (area.containsKey("Stay")) world.setBiome(this.x, this.y, area.get("Stay"));
+		
+		control.updateData(health);
 		
 		if (health <= 0) {
 			control.playerDeath();
@@ -182,5 +182,9 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	
 	public HashMap<String, Byte> getArea(int x, int y) {
 		return world.getArea(x, y);
+	}
+	
+	public World getWorld() {
+		return world;
 	}
 }

@@ -17,9 +17,9 @@ public class ConsoleControl implements ControlInterface {
 	
 	private Client client;
 	
-	public ConsoleControl(World world, Client client) {
-		this.world = world;
+	public ConsoleControl(Client client) {
 		this.client = client;
+		this.world = client.getWorld();
 	}
 	
 	public String getUsername() {

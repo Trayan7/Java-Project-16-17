@@ -113,7 +113,6 @@ public class World {
 	 * @return the biome as byte
 	 */
 	public Byte getBiome(int column, int row) {
-		//TODO Add some exception in case the coordinates are out of bounds
 		return Map[column][row];
 	}
 	
