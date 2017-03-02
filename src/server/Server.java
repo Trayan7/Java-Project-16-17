@@ -160,13 +160,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		}
 	}
 	
-	/**
-	 * Game main loop
-	 */
-	public void run() {
-		//TODO HEARTBEAT
-		boolean test = true;
-		while (test) {
+	public void start() {
+		while (players.size() < 2) {
 			System.out.print(".");
 			try {
 				Thread.sleep(300);
@@ -175,7 +170,39 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				e.printStackTrace();
 			}
 		}
-		
+		run();
+	}
+	
+	/**
+	 * Game main loop
+	 */
+	public void run() {
+		System.out.println("Starting heartbeat");
+		while (players.size() > 1) {
+			System.out.print(".");
+			try {
+				Thread.sleep(300);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			ArrayList<UUID> dead = new ArrayList<UUID>();
+			for (Player player : players.values()) {
+				boolean connected = true;
+				try {
+					player.getClient().heartbeat();
+				} catch (RemoteException e) {
+					connected = false;
+				}
+				if (!connected) {
+					//Player connection is dead
+					dead.add(player.getID());
+				}
+				for (UUID deadManWalking: dead) {
+					handleDisconnect(deadManWalking);
+				}
+			}
+		}
 		
 		if (players.size() <= 1) {
 			//Out of players
@@ -189,8 +216,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				System.exit(0);
 			}
 		}
-			
-			updatePlayers();
+
+		updatePlayers();
 	}
 
 	public synchronized void updatePlayers() {
@@ -279,7 +306,6 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 								roamingPlayers.remove(newBattler.getID());
 							}
 							battles.add(battle);
-							new Thread(battle).start();
 						} catch (RemoteException e) {
 							e.printStackTrace();
 						}
@@ -333,10 +359,18 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				System.out.println("Asking " + player.getName() + " for move.");
 				player.getClient().askForMove();
 			} catch (RemoteException e) {
-				// TODO Handle disconnects
-				e.printStackTrace();
+				handleDisconnect(player.getID());
 			}
-			// Notify player that he has to give us his new action now
 		}
+	}
+	
+	public synchronized void handleDisconnect(UUID dead) {
+		players.remove(dead);
+		roamingPlayers.remove(dead);
+		for (Battle battle : battles) {
+			battle.removePlayer(dead);
+		}
+		//Remove from roaming players
+		//Remove player from battles
 	}
 }

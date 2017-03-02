@@ -8,9 +8,7 @@ import java.util.UUID;
 
 import server.Server;
 
-public class Battle extends UnicastRemoteObject implements Runnable, BattleInterface {
-	
-	private static final long serialVersionUID = 1L;
+public class Battle extends UnicastRemoteObject implements BattleInterface {
 	
 	private Server server;
 	
@@ -24,33 +22,6 @@ public class Battle extends UnicastRemoteObject implements Runnable, BattleInter
 		this.x = x;
 		this.y = y;
 	}
-
-	public void run() {
-		while (players.size() > 1) {
-			ArrayList<UUID> dead = new ArrayList<UUID>();
-			for (Player player : players.values()) {
-				if (player.getHealth() <= 0) {
-					//dead
-					dead.add(player.getID());
-				}
-			}
-			for (UUID id : dead) {
-				players.remove(id);
-				System.out.println("Removed a player");
-				server.updatePlayers();
-			}
-		}
-		System.out.println("Out of players");
-		for (Player player : players.values()) {
-			try {
-				player.getClient().stopBattle();
-			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		server.endBattle(this);
-	}
 	
 	public void addPlayer(Player player) {
 		if (!players.containsKey(player.getID())) {
@@ -59,8 +30,7 @@ public class Battle extends UnicastRemoteObject implements Runnable, BattleInter
 			try {
 				player.getClient().startBattle(this);
 			} catch (RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				server.handleDisconnect(player.getID());
 			}
 		}
 	}
@@ -73,6 +43,12 @@ public class Battle extends UnicastRemoteObject implements Runnable, BattleInter
 	
 	public void attack(UUID target) throws RemoteException {
 		server.attack(target);
+		if (players.get(target).getHealth() <= 0) {
+			//dead
+			players.remove(target);
+			System.out.println("Removed a player");
+			server.updatePlayers();
+		}
 	}
 	
 	public int getX() {
@@ -86,5 +62,15 @@ public class Battle extends UnicastRemoteObject implements Runnable, BattleInter
 	public void removePlayer(UUID id) {
 		System.out.println("Removing a player from battle");
 		players.remove(id);
+		
+		System.out.println("Out of players");
+		for (Player player : players.values()) {
+			try {
+				player.getClient().stopBattle();
+			} catch (RemoteException e) {
+				server.handleDisconnect(player.getID());
+			}
+		}
+		server.endBattle(this);
 	}
 }
