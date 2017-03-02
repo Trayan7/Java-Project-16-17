@@ -58,7 +58,6 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	private World world;
 
 	private Client client;
-	private boolean disconnect = false;
 
 	/**
 	 * Creates GUIControl object and starts the main window of the GUI.
@@ -484,7 +483,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		} else if (e.getSource().equals(stay)) {
 			dir = "Stay";
 		} else if (e.getSource().equals(close)) {
-			disconnect = true;
+			client.disconnect();
 		}
 	}
 
@@ -537,10 +536,5 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		battle.dispatchEvent(new WindowEvent(battle, WindowEvent.WINDOW_CLOSING));
 		dispose();
 		return temp;
-	}
-
-	@Override
-	public boolean disconnect() {
-		return disconnect ;
 	}
 }

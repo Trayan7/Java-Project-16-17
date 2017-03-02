@@ -17,9 +17,8 @@ public class ConsoleControl implements ControlInterface {
 	
 	private Client client;
 	
-	public ConsoleControl(Client client) {
+	public ConsoleControl(final Client client) {
 		this.client = client;
-		this.world = client.getWorld();
 	}
 	
 	public String getUsername() {
@@ -54,6 +53,10 @@ public class ConsoleControl implements ControlInterface {
 	}
 	
 	public String getMoveDirection(int column, int row) {
+		if (this.world == null) {
+			this.world = client.getWorld();
+		}
+		
 		HashMap<String, Byte> area = world.getArea(column, row);
 		List<String> directions = Arrays.asList("North","East","South","West");
 		System.out.println("You're standing on a " + world.biomeNames(area.get("Stay")));
@@ -67,7 +70,7 @@ public class ConsoleControl implements ControlInterface {
 		}
 		
 		String dir = "";
-		while (!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West") && !dir.equals("Stay")) {
+		while (!dir.equals("North") && !dir.equals("East") && !dir.equals("South") && !dir.equals("West") && !dir.equals("Stay") && !dir.equals("Exit")) {
 			System.out.println();
 			System.out.println("Please choose one of the following moves:");
 			System.out.println("North");
@@ -76,9 +79,15 @@ public class ConsoleControl implements ControlInterface {
 			System.out.println("West");
 			System.out.println("Stay");
 			System.out.println();
+			System.out.println("Exit");
+			System.out.println();
 			dir = scanner.next();
 			scanner.nextLine();
 			System.out.println();
+		}
+		
+		if (dir.equals("Exit")) {
+			client.disconnect();
 		}
 		
 		return dir;

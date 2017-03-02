@@ -24,6 +24,4 @@ public interface ControlInterface {
 	void playerWin();
 
 	void updateData(int health);
-
-	boolean disconnect();
 }

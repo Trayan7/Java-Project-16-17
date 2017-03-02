@@ -152,9 +152,6 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		if (health <= 0) {
 			control.playerDeath();
 			System.exit(0);
-		} else if (control.disconnect() == true) {
-			control.playerDeath();
-			System.exit(0);
 		}
 	}
 	
@@ -192,5 +189,10 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	
 	public World getWorld() {
 		return world;
+	}
+	
+	public void disconnect() {
+		control.playerDeath();
+		System.exit(0);
 	}
 }
