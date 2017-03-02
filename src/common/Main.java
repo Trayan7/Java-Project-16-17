@@ -18,7 +18,7 @@ public class Main {
 				Server server = new Server("random");
 				Naming.rebind(uri, server);
 
-				server.start();
+				server.run();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

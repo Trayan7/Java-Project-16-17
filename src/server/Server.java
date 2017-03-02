@@ -65,6 +65,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		if(input.equals("random")){
 			worldName = "random";
 			System.out.println("Choose map width (1-100):");
+			//TODO Check input
 			columns = Integer.parseInt(scanner.next());
 			scanner.nextLine();
 			while(columns <= 0 || columns > 100) {
@@ -151,19 +152,21 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 			readyPlayers.add(id);
 		}
 		System.out.println(readyPlayers.size() + "/" + players.size() + " ready");
+		
+		if (players.size() == readyPlayers.size()) {
+			//Everyone's ready
+			updatePlayers();
+			askForMoves();
+		}
 	}
-
+	
 	/**
-	 * Function waits until at least one player joined and every player is
-	 * ready, the starts the game
+	 * Game main loop
 	 */
-	public void start() {
-		System.out.println("Started server");
-		// Seriously, why can't we just put this in run()?
-		// Start is already used by java to start parallel threads. Maybe choose
-		// a different name and/or put it in run().
-		while (players.size() < 1 || players.size() != readyPlayers.size()) {
-			// Wait...
+	public void run() {
+		//TODO HEARTBEAT
+		boolean test = true;
+		while (test) {
 			System.out.print(".");
 			try {
 				Thread.sleep(300);
@@ -172,57 +175,52 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				e.printStackTrace();
 			}
 		}
-		updatePlayers();
-		run();
+		
+		
+		if (players.size() <= 1) {
+			//Out of players
+			//End game
+			for (Player player : players.values()) {
+				try {
+					player.getClient().winGame();
+				} catch (RemoteException e) {
+					//Whatever
+				}
+				System.exit(0);
+			}
+		}
+			
+			updatePlayers();
 	}
 
-	/**
-	 * Game main loop
-	 */
-	public void run() {
-		System.out.println("Started game");
-		// While there's more than one player left
-		while (players.size() > 1) {
-			// Reset old action list
-			playerActions = new HashMap<UUID, String>();
-
-			for (UUID playerName : roamingPlayers) {
-				Player player = players.get(playerName);
-				try {
-					player.getClient().askForMove();
-				} catch (RemoteException e) {
-					// TODO Handle disconnects
-					e.printStackTrace();
-				}
-				// Notify player that he has to give us his new action now
+	public synchronized void updatePlayers() {
+		ArrayList<UUID> dead = new ArrayList<UUID>();
+		for (Player player : players.values()) {
+			boolean disconnect = false;
+			try {
+				player.getClient().updateData(player.getHealth(), player.getX(), player.getY(), world.getArea(player.getX(), player.getY()));
+			} catch (RemoteException e) {
+				disconnect = true;
 			}
-			
-			System.out.println("Wait for players to take action");
-			
-			// Wait until all players set their next action
-			while (roamingPlayers.size() == 0 || roamingPlayers.size() > playerActions.size()) {
-				if (players.size() <= 1) {
-					//Out of players
-					//End game
-					for (Player player : players.values()) {
-						try {
-							player.getClient().winGame();
-						} catch (RemoteException e) {
-							//Whatever
-						}
-						System.exit(0);
-					}
-				}
-				// Wait...
-				System.out.print(".");
-				try {
-					Thread.sleep(300);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+			if (disconnect || player.getHealth() <= 0) {
+				dead.add(player.getID());
 			}
-			
+		}
+		
+		for (UUID id : dead) {
+			for (Battle battle: battles) {
+				battle.removePlayer(id);
+			}
+			players.remove(id);
+		}
+	}
+	
+	public synchronized void makeMove(UUID id, String dir) throws RemoteException {
+		playerActions.put(id, dir);
+		System.out.println(players.get(id).getName() + " chose " + dir);
+		System.out.println(playerActions.size() + "/" + roamingPlayers.size() + " have chosen");
+		
+		if (roamingPlayers.size() == playerActions.size()) {
 			System.out.println("Updating player positions");
 			
 			// Everyone set his move, so let's move it
@@ -251,8 +249,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 					spots[i][j] = new ArrayList<Player>();
 				}
 			}
-			for (UUID id: roamingPlayers)  {
-				Player player = players.get(id);
+			for (UUID roamingid: roamingPlayers)  {
+				Player player = players.get(roamingid);
 				spots[player.getX()][player.getY()].add(player);
 			}
 			
@@ -289,47 +287,10 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				}
 			}
 			
+			System.out.println("Updating players, asking for new moves");
 			updatePlayers();
+			askForMoves();
 		}
-
-		// TODO Notify last man standing of his win
-		// The end
-	}
-
-	public synchronized void updatePlayers() {
-		ArrayList<UUID> dead = new ArrayList<UUID>();
-		for (Player player : players.values()) {
-			boolean disconnect = false;
-			try {
-				player.getClient().updateData(player.getHealth(), player.getX(), player.getY(), world.getArea(player.getX(), player.getY()));
-			} catch (RemoteException e) {
-				disconnect = true;
-			}
-			if (disconnect || player.getHealth() <= 0) {
-				dead.add(player.getID());
-			}
-		}
-		
-		for (UUID id : dead) {
-			for (Battle battle: battles) {
-				battle.removePlayer(id);
-			}
-			players.remove(id);
-		}
-
-		/**
-		 * TODO Notify all players of new player states (this also notifies
-		 * killed players' clients about their deaths) Check all battles for
-		 * killed players End those battles Return survivors to roamingPlayers
-		 */
-		// Check all battles for killed players -> Battles will terminate
-		// themselves, so we just need to wait for them.
-	}
-
-	public void makeMove(UUID id, String dir) throws RemoteException {
-		playerActions.put(id, dir);
-		System.out.println(players.get(id).getName() + " chose " + dir);
-		System.out.println(playerActions.size() + "/" + roamingPlayers.size() + " have chosen");
 	}
 	
 	public void endBattle(Battle battle) {
@@ -356,13 +317,26 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		updatePlayers();
 	}
 
-	@Override
 	public int getWorldWidth() throws RemoteException {
 		return this.world.getWidth();
 	}
 
-	@Override
 	public int getWorldHeight() throws RemoteException {
 		return this.world.getHeight();
+	}
+	
+	private synchronized void askForMoves() {
+		playerActions = new HashMap<UUID, String>();
+		for (UUID playerName : roamingPlayers) {
+			Player player = players.get(playerName);
+			try {
+				System.out.println("Asking " + player.getName() + " for move.");
+				player.getClient().askForMove();
+			} catch (RemoteException e) {
+				// TODO Handle disconnects
+				e.printStackTrace();
+			}
+			// Notify player that he has to give us his new action now
+		}
 	}
 }
