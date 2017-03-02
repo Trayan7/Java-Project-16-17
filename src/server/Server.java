@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.UUID;
 
 import common.Battle;
@@ -53,7 +54,37 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	 * @param worldName The name of the world to be loaded, empty if new generated
 	 */
 	public Server(String worldName) throws RemoteException {
-		this.world = new World(worldName);
+		System.out.println("Please enter the filename of the map you want to load");
+		System.out.println("or enter \"random\" for a random map.");
+		int columns = 0;
+		int rows = 0;
+		@SuppressWarnings("resource")
+		Scanner scanner = new Scanner(System.in);
+		String input = scanner.next();
+		scanner.nextLine();
+		if(input.equals("random")){
+			worldName = "random";
+			System.out.println("Choose map width (1-100):");
+			columns = Integer.parseInt(scanner.next());
+			scanner.nextLine();
+			while(columns <= 0 || columns > 100) {
+				System.out.println("That was an invalid width.");
+				System.out.println("Choose map width (1-100):");
+				columns = Integer.parseInt(scanner.next());
+				scanner.nextLine();
+			}
+			System.out.println("Choose map height (1-100):");
+			rows = Integer.parseInt(scanner.next());
+			scanner.nextLine();
+			while(rows <= 0 || rows > 100) {
+				System.out.println("That was an invalid height.");
+				System.out.println("Choose map height (1-100):");
+				columns = Integer.parseInt(scanner.next());
+				scanner.nextLine();
+			}
+		}
+		
+		this.world = new World(worldName, columns, rows);
 		System.out.println("World size: " + world.getWidth() + "x" + world.getHeight());
 	}
 
@@ -321,7 +352,17 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 	}
 	
 	public void attack(UUID target) throws RemoteException {
-		players.get(target).setHealth(players.get(target).getHealth() - 100);
+		players.get(target).setHealth(players.get(target).getHealth() - rgen.nextInt(20));
 		updatePlayers();
+	}
+
+	@Override
+	public int getWorldWidth() throws RemoteException {
+		return this.world.getWidth();
+	}
+
+	@Override
+	public int getWorldHeight() throws RemoteException {
+		return this.world.getHeight();
 	}
 }

@@ -14,4 +14,6 @@ public interface ServerInterface extends Remote {
 	public void getReady(UUID id) throws RemoteException;
 	public void makeMove(UUID id, String dir) throws RemoteException;
 	public void attack(UUID target) throws RemoteException;
+	public int getWorldWidth() throws RemoteException;
+	public int getWorldHeight() throws RemoteException;
 }
