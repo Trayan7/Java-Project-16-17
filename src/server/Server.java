@@ -83,6 +83,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				columns = Integer.parseInt(scanner.next());
 				scanner.nextLine();
 			}
+		} else {
+			worldName = input;
 		}
 		
 		this.world = new World(worldName, columns, rows);
@@ -198,9 +200,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 					//Player connection is dead
 					dead.add(player.getID());
 				}
-				for (UUID deadManWalking: dead) {
-					handleDisconnect(deadManWalking);
-				}
+			}
+			for (UUID deadManWalking: dead) {
+				handleDisconnect(deadManWalking);
 			}
 		}
 		
@@ -216,7 +218,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 				System.exit(0);
 			}
 		}
-
+		
 		updatePlayers();
 	}
 
