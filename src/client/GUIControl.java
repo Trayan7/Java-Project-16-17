@@ -3,6 +3,7 @@ package client;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -513,8 +514,20 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * @return Returns the index + 1 of the chosen target
 	 */
 	public int getTarget(ArrayList<Player> targets) {
+		System.out.println("Getting target");
 		JFrame battle = new JFrame("Battle");
-		battle.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+		battle.addWindowListener(new WindowAdapter() {
+		    @Override
+		    public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+		    	battleLock.lock();
+				try{
+					target = 0;
+					battleCond.signal();
+				} finally {
+					battleLock.unlock();
+				}
+		    }
+		});
 		//centering
 		battle.setLocationRelativeTo(null);
 		battle.setLayout(null);
@@ -537,7 +550,6 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 			att.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					System.out.println("Pressed target button");
 					battleLock.lock();
 					try{
 						target = id;
@@ -549,7 +561,6 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 			});
 		}
 		while (target == 0) {
-			System.out.println("Invalid Target or not chosen");
 			battleLock.lock();
 			try {
 				battleCond.await();
