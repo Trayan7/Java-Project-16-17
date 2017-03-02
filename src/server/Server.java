@@ -375,4 +375,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 		//Remove from roaming players
 		//Remove player from battles
 	}
+	
+	public void heartbeat() {
+		//Check connection
+	}
 }

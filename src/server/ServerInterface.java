@@ -16,4 +16,5 @@ public interface ServerInterface extends Remote {
 	public void attack(UUID target) throws RemoteException;
 	public int getWorldWidth() throws RemoteException;
 	public int getWorldHeight() throws RemoteException;
+	public void heartbeat() throws RemoteException;
 }

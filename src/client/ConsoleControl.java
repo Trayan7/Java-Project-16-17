@@ -132,4 +132,8 @@ public class ConsoleControl implements ControlInterface {
 	public void updateData(int health) {
 		System.out.println("Your new health: " + health);
 	}
+	
+	public void playerDisconnect() {
+		System.out.println("Disconnected from server.");
+	}
 }

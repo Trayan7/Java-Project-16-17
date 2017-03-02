@@ -48,6 +48,8 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	ReentrantLock lock = new ReentrantLock();
 	Condition cond = lock.newCondition();
 	
+	Thread heartbeat;
+	
 	public Client() throws RemoteException {
 		System.out.println("To start with GUI enter: \"GUIControl\"");
 		System.out.println("To start in console enter: \"ConsoleControl\"");
@@ -88,15 +90,41 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 					id = server.join(username, this);
 				}
 				
+				//Start heartbeat thread
+				heartbeat = new Thread()
+				{
+				    public void run() {
+				    	while (true) {
+				    		try {
+					        	System.out.print(".");
+								Thread.sleep(300);
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+					        boolean connected = true;
+							try {
+								server.heartbeat();
+							} catch (RemoteException e) {
+								connected = false;
+							}
+							if (!connected) {
+								//Server connection is dead
+								handleDisconnect();
+							}
+				    	}
+				    }
+				};
+				heartbeat.start();
+				
 				world = new World("empty", server.getWorldWidth(), server.getWorldHeight());
 				
 				control.waitUntilReady();
 				//Ready
 				server.getReady(id);
 				
-				
 				//While we're in the game
 				while (health > 0) {
+					System.out.print(".");
 					if (this.battle != null) {
 						//Gonna fight
 						ArrayList<Player> targets = battle.getPlayers();
@@ -128,30 +156,27 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 						//Could add stuff like "pick up item" or something like that later
 						
 						lock.lock();
-						try{
-							if(!nextAction.equals("move") && this.battle == null) {
+						try {
+							if (!nextAction.equals("move") && this.battle == null) {
 								cond.await();
-							}							
-						}finally{
-							lock.unlock();							
+							}
+						} finally {
+							lock.unlock();
 						}
 						
 						switch (nextAction) {
 						case "move":
 							nextAction = "";
-							String dir;
-							dir = control.getMoveDirection(x, y);
+							String dir = control.getMoveDirection(x, y);
 							server.makeMove(id, dir);
 							break;
 						}
 					}
 				}
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				handleDisconnect();
 			}
 		}
-		
 	
 	public void updateData(int health, int x, int y, HashMap<String, Byte> area) throws RemoteException {
 		this.health = health;
@@ -178,9 +203,9 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		lock.lock();
 		try{
 			this.nextAction = "move";
-			cond.signal();			
+			cond.signal();
 		} finally {
-			lock.unlock();			
+			lock.unlock();
 		}
 	}
 	
@@ -219,6 +244,11 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	}
 	
 	public void heartbeat() {
-		  //Just to check the connection
-		 }
+		//Just to check the connection
+	}
+	
+	public void handleDisconnect() {
+		control.playerDisconnect();
+		System.exit(0);
+	}
 }

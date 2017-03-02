@@ -576,4 +576,9 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		dispose();
 		return temp;
 	}
+	
+	public void playerDisconnect() {
+		JOptionPane.showConfirmDialog(frame, "Disconnected from server.", "title", JOptionPane.DEFAULT_OPTION,
+				JOptionPane.PLAIN_MESSAGE);
+	}
 }
