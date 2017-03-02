@@ -22,46 +22,63 @@ import common.Player;
 import common.World;
 
 public class GUIControl extends JFrame implements ControlInterface, ActionListener {
-
-	/*
-	 * TODO create text field for status of game e.g. choose a direction
-	 */
-
-	private JPanel[][] tileMap;
+	
 	private static final long serialVersionUID = 1L;
-	private String dir = "";
+	
+	/**
+	 * Values, panels and more for the gui
+	 */
+	private int health = 100;
 	private int height = 600;
 	private int width = 800;
-	private String title = "FortProg: Java Project";
-	private JFrame frame = null;
-	private int health = 100;
-	private JProgressBar hp = hpBar(health);
+	private int target = 0;
 	private int maxHealth = 100;
+	private String dir = "";
+	private String title = "FortProg: Java Project";
 	private String uName = "not updated, yet";
+	private JFrame frame = null;
+	private JPanel[][] tileMap;
+	private JProgressBar hp = hpBar(health);
 	private JLabel name = new JLabel(uName);
 	private JScrollPane map;
-	private int target = 0;
 	private JPanel playerIcon;
 
+	/**
+	 * Colors of the different biomes
+	 */
 	private Color cForest = new Color(111, 232, 86);
 	private Color cPlains = new Color(177, 255, 95);
 	private Color cMountain = new Color(102, 88, 69);
 	private Color cSwamp = new Color(89, 84, 43);
 	private Color cIsland = new Color(255, 228, 45);
 
+	/**
+	 * Buttons of the GUI
+	 */
 	private JButton north;
 	private JButton east;
 	private JButton west;
 	private JButton south;
 	private JButton stay;
-	private JButton close;
 
+	/**
+	 * Main JFrame of the GUI
+	 */
 	private JFrame window;
 
+	/**
+	 * World to build upon
+	 */
 	private World world;
 
+	/**
+	 * The client of the GUI
+	 */
 	private Client client;
 	
+	/**
+	 * Locks and Conditions for battle and action synchronization
+	 */
 	ReentrantLock lock = new ReentrantLock();
 	Condition cond = lock.newCondition();
 	ReentrantLock battleLock = new ReentrantLock();
@@ -70,8 +87,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	/**
 	 * Creates GUIControl object and starts the main window of the GUI.
 	 * 
-	 * @param world
-	 *            an empty world to fill while playing
+	 * @param world an empty world to fill while playing
 	 */
 	public GUIControl(Client client) {
 		this.client = client;
@@ -121,13 +137,6 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		window.add(west);
 		window.add(south);
 		window.add(stay);
-		
-//		//add close button
-//		close = new JButton("Exit");
-//		close.addActionListener(this);
-//		close.setVisible(true);
-//		close.setBounds(650, 350, 100, 25);
-//		window.add(close);
 		
 		// add username and health bar
 		name = new JLabel(uName);
@@ -255,7 +264,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	/**
 	 * Opens a window to ask for a different user name
 	 * 
-	 * @return
+	 * @return The chosen name
 	 */
 	public String getUsernameFailed() {
 		uName = JOptionPane.showInputDialog(frame, "That username is already taken: ", title,
@@ -408,10 +417,8 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	/**
 	 * Returns the last direction button the user clicked
 	 * 
-	 * @param x
-	 *            irrelevant
-	 * @param y
-	 *            irrelevant
+	 * @param x irrelevant
+	 * @param y irrelevant
 	 * @return String of direction
 	 * @throws InterruptedException 
 	 */
@@ -429,18 +436,15 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 			dir = "";
 			return answer;
 		}			
-//		}
+
 
 	/**
 	 * Creates a new tile at a given position in map with the background color
 	 * defined by the biome
 	 * 
-	 * @param x
-	 *            X position of tile
-	 * @param y
-	 *            Y position of tile
-	 * @param n
-	 *            Biome of the tile
+	 * @param x X position of tile
+	 * @param y Y position of tile
+	 * @param n Biome of the tile
 	 */
 	public void createTile(int x, int y) {
 		JPanel tile;
@@ -509,8 +513,7 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 	 * Opens a window of all possible targets in a scrambled order and lets the
 	 * user click any of those targets
 	 * 
-	 * @param targets
-	 *            ArrayList of the players that are in the battle
+	 * @param targets ArrayList of the players that are in the battle
 	 * @return Returns the index + 1 of the chosen target
 	 */
 	public int getTarget(ArrayList<Player> targets) {
@@ -578,6 +581,9 @@ public class GUIControl extends JFrame implements ControlInterface, ActionListen
 		return temp;
 	}
 	
+	/**
+	 * Opens a window to let the user know that he disconnected
+	 */
 	public void playerDisconnect() {
 		JOptionPane.showConfirmDialog(frame, "Disconnected from server.", "Disconnect", JOptionPane.DEFAULT_OPTION,
 				JOptionPane.PLAIN_MESSAGE);
