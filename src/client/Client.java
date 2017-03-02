@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import common.BattleInterface;
 import common.Player;
@@ -43,6 +45,9 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	
 	ControlInterface control;
 	
+	ReentrantLock lock = new ReentrantLock();
+	Condition cond = lock.newCondition();
+	
 	public Client() throws RemoteException {
 		System.out.println("To start with GUI enter: \"GUIControl\"");
 		System.out.println("To start in console enter: \"ConsoleControl\"");
@@ -72,70 +77,81 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		//gui = new GUIControl(world);
 		//String uri = "rmi://localhost:1099/ServerInterface";
 		
-		try {
-			server = (ServerInterface) Naming.lookup(uri);
-			
-			UUID id = null;
-			while (id == null) {
-				String username;
-				username = control.getUsername();
-				id = server.join(username, this);
-			}
-			
-			world = new World("empty", server.getWorldWidth(), server.getWorldHeight());
-			
-			control.waitUntilReady();
-			//Ready
-			server.getReady(id);
-			
-			
-			//While we're in the game
-			//(Busy waiting, but if we use wait() we need a lock)
-			while (health > 0) {
-				if (this.battle != null) {
-					//Gonna fight
-					ArrayList<Player> targets = battle.getPlayers();
-					Collections.shuffle(targets);
-					
-					int decision = control.getTarget(targets);
-					
-					if (decision == 0) {
-						continue;
-					}
-					
-					if (this.battle == null) {
-						continue;
-					}
-					Player target = targets.get(decision - 1);
-					boolean validTarget = false;
-					for (Player player: this.battle.getPlayers()) {
-						if (player.getName().equals(target.getName())) {
-							validTarget = true;
+
+			try {
+				server = (ServerInterface) Naming.lookup(uri);
+				
+				UUID id = null;
+				while (id == null) {
+					String username;
+					username = control.getUsername();
+					id = server.join(username, this);
+				}
+				
+				world = new World("empty", server.getWorldWidth(), server.getWorldHeight());
+				
+				control.waitUntilReady();
+				//Ready
+				server.getReady(id);
+				
+				
+				//While we're in the game
+				while (health > 0) {
+					if (this.battle != null) {
+						//Gonna fight
+						ArrayList<Player> targets = battle.getPlayers();
+						Collections.shuffle(targets);
+						
+						int decision = control.getTarget(targets);
+						
+						if (decision == 0) {
+							continue;
+						}
+						
+						if (this.battle == null) {
+							continue;
+						}
+						Player target = targets.get(decision - 1);
+						boolean validTarget = false;
+						for (Player player: this.battle.getPlayers()) {
+							if (player.getName().equals(target.getName())) {
+								validTarget = true;
+								break;
+							}
+						}
+						if (!validTarget) {
+							continue;
+						}
+						battle.attack(target.getID());
+					} else {
+						//Move it move it
+						//Could add stuff like "pick up item" or something like that later
+						
+						lock.lock();
+						try{
+							if(!nextAction.equals("move") && this.battle == null) {
+								cond.await();
+							}							
+						}finally{
+							lock.unlock();							
+						}
+						
+						switch (nextAction) {
+						case "move":
+							String dir;
+							dir = control.getMoveDirection(x, y);
+							server.makeMove(id, dir);
+							nextAction = "";
 							break;
 						}
 					}
-					if (!validTarget) {
-						continue;
-					}
-					battle.attack(target.getID());
-				} else {
-					//Move it move it
-					//Could add stuff like "pick up item" or something like that later					
-					switch (nextAction) {
-					case "move":
-						String dir;
-						dir = control.getMoveDirection(x, y);
-						server.makeMove(id, dir);
-						nextAction = "";
-						break;
-					}
 				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
-	}
+		
 	
 	public void updateData(int health, int x, int y, HashMap<String, Byte> area) throws RemoteException {
 		this.health = health;
@@ -159,7 +175,13 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 	 * Called by server, asks the player for his next move
 	 */
 	public void askForMove() throws RemoteException {
-		this.nextAction = "move";
+		lock.lock();
+		try{
+			this.nextAction = "move";
+			cond.signal();			
+		} finally {
+			lock.unlock();			
+		}
 	}
 	
 	public void startBattle(BattleInterface battle) throws RemoteException {
@@ -195,4 +217,8 @@ public class Client extends UnicastRemoteObject implements ClientInterface {
 		control.playerDeath();
 		System.exit(0);
 	}
+	
+	public void heartbeat() {
+		  //Just to check the connection
+		 }
 }
